@@ -1,3 +1,195 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+/*
+NOTE: If you see 'Unknown at rule @tailwind' or '@apply' errors, ensure your build process uses PostCSS with Tailwind CSS plugin. These are not standard CSS and require Tailwind/PostCSS setup. See https://tailwindcss.com/docs/installation for setup help.
+*/
+
+/* Hide all scrollbars (WebKit, Firefox, IE/Edge) */
+* {
+  scrollbar-width: none;           /* Firefox */
+  /* Note: 'scrollbar-width' is not supported by Chrome < 121, Safari, iOS Safari, Samsung Internet. Consider using ::-webkit-scrollbar for cross-browser support. */
+  -ms-overflow-style: none;        /* IE and Edge */
+}
+
+*::-webkit-scrollbar {             /* Chrome, Safari, Opera */
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+}
+
+/* Smooth transitions */
+* {
+  @apply transition-colors duration-200;
+}
+
+/* Form inputs */
+.form-input {
+  @apply w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200;
+}
+
+.dark .form-input {
+  @apply bg-neutral-800 border-neutral-600 text-white;
+}
+
+/* Buttons */
+.btn {
+  @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+}
+
+.btn-primary {
+  @apply bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
+}
+
+.btn-secondary {
+  @apply bg-secondary-600 text-white hover:bg-secondary-700 focus:ring-secondary-500;
+}
+
+.btn-outline {
+  @apply border border-neutral-300 text-neutral-700 hover:bg-neutral-50 focus:ring-neutral-500;
+}
+
+.dark .btn-outline {
+  @apply border-neutral-600 text-neutral-300 hover:bg-neutral-800;
+}
+
+/* Cards */
+.card {
+  @apply bg-white rounded-xl shadow-sm border border-neutral-200 transition-all duration-200;
+}
+
+.dark .card {
+  @apply bg-neutral-800 border-neutral-700;
+}
+
+.card:hover {
+  @apply shadow-md transform -translate-y-1;
+}
+
+/* Leaflet map styles */
+.leaflet-container {
+  @apply rounded-lg;
+  width: 100% !important;
+  height: 100% !important;
+  position: relative !important;
+  z-index: 1;
+}
+
+.leaflet-container.leaflet-touch-drag.leaflet-touch-zoom {
+  position: relative !important;
+}
+
+.leaflet-popup-content-wrapper {
+  @apply rounded-lg;
+}
+
+.dark .leaflet-popup-content-wrapper {
+  background-color: #262626;
+  color: white;
+}
+
+.dark .leaflet-popup-tip {
+  background-color: #262626;
+}
+
+/* Loading spinner */
+.spinner {
+  @apply inline-block w-6 h-6 border-2 border-current border-t-transparent rounded-full animate-spin;
+}
+
+/* Glass morphism effect */
+.glass {
+  @apply backdrop-blur-xl bg-white/70 border border-white/20;
+}
+
+.dark .glass {
+  @apply bg-neutral-900/70 border-neutral-700/50;
+}
+
+/* Dynamic island navbar */
+.dynamic-island {
+  @apply fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-full;
+  @apply glass shadow-lg shadow-cyan-500/20;
+  -webkit-backdrop-filter: blur(20px); /* Safari 9+, iOS 9+ */
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .dynamic-island {
+  @apply shadow-cyan-400/20;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+/* Gradient text */
+.gradient-text {
+  @apply bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent;
+}
+
+.dark .gradient-text {
+  @apply from-primary-400 to-secondary-400;
+}
+
+/* Custom animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.float-animation {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Property status colors */
+.status-available {
+  @apply bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-300;
+}
+
+.status-booked {
+  @apply bg-error-100 text-error-800 dark:bg-error-900/30 dark:text-error-300;
+}
+
+.status-not-available {
+  @apply bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-300;
+}
+
+/* Rating stars */
+.star-rating {
+  @apply inline-flex items-center space-x-1;
+}
+
+.star {
+  @apply w-4 h-4 text-warning-500;
+}
+
+.star.filled {
+  @apply text-warning-500;
+}
+
+.star.empty {
+  @apply text-neutral-300 dark:text-neutral-600;
+}
+
+/* Form validation */
+.form-error {
+  @apply text-error-600 text-sm mt-1;
+}
+
+.form-success {
+  @apply text-success-600 text-sm mt-1;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .dynamic-island {
+    @apply top-2 px-4 py-2;
+  }
+}
+
+/* Focus visible for accessibility */
+.focus-visible:focus-visible {
+  @apply outline-none ring-2 ring-primary-500 ring-offset-2;
+}
+
+.dark .focus-visible:focus-visible {
+  @apply ring-offset-neutral-800;
+}
