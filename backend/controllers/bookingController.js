@@ -1,7 +1,6 @@
 import { validationResult } from 'express-validator';
 import Booking from '../models/Booking.js';
 import Property from '../models/Property.js';
-import Transaction from '../models/Transaction.js';
 import { createNotification } from './notificationController.js';
 
 // @desc Create booking request
@@ -242,9 +241,6 @@ export const deleteBooking = async (req, res) => {
       return res.status(403).json({ message: 'Access denied' });
     }
 
-    // Delete related transactions first
-    await Transaction.deleteMany({ booking: booking._id });
-    
     // Delete the booking
     await Booking.findByIdAndDelete(req.params.id);
 

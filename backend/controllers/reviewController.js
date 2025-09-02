@@ -24,16 +24,16 @@ export const createReview = async (req, res) => {
       return res.status(404).json({ message: 'Property not found' });
     }
 
-    // Check if user has a completed booking for this property
+    // Check if user has an approved booking for this property
     const hasBooking = await Booking.findOne({
       tenant: req.user._id,
       property: propertyId,
-      status: 'completed'
+      status: 'approved'
     });
 
     if (!hasBooking) {
       return res.status(400).json({ 
-        message: 'You can only review properties you have booked and completed' 
+        message: 'You can only review properties you have booked and have been approved for' 
       });
     }
 
@@ -71,7 +71,7 @@ export const createReview = async (req, res) => {
   }
 };
 
-// @desc Check if current user can review a property (tenant with completed booking)
+// @desc Check if current user can review a property (tenant with approved booking)
 // @route GET /api/reviews/can-review?propertyId=
 // @access Private (Tenant)
 export const canReviewCheck = async (req, res) => {
@@ -81,7 +81,7 @@ export const canReviewCheck = async (req, res) => {
     const hasBooking = await Booking.findOne({
       tenant: req.user._id,
       property: propertyId,
-      status: 'completed'
+      status: 'approved'
     });
     return res.json({ data: { canReview: !!hasBooking } });
   } catch (error) {
@@ -175,6 +175,46 @@ export const getMyReviews = async (req, res) => {
   } catch (error) {
     console.error('Get my reviews error:', error);
     res.status(500).json({ message: 'Server error while fetching reviews' });
+  }
+};
+
+// @desc Get reviews for owner's properties
+// @route GET /api/reviews/my-properties
+// @access Private (Owner)
+export const getMyPropertiesReviews = async (req, res) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+
+    // First, get all properties owned by the current user
+    const properties = await Property.find({ owner: req.user._id }).select('_id');
+    const propertyIds = properties.map(p => p._id);
+
+    // Then get all reviews for these properties
+    const reviews = await Review.find({ property: { $in: propertyIds } })
+      .populate('property', 'title images location')
+      .populate('tenant', 'name email')
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+
+    const total = await Review.countDocuments({ property: { $in: propertyIds } });
+
+    res.json({
+      message: 'Reviews for owner properties fetched successfully',
+      data: {
+        reviews,
+        pagination: {
+          total,
+          page: Number(page),
+          pages: Math.ceil(total / limit),
+          limit: Number(limit)
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Get my properties reviews error:', error);
+    res.status(500).json({ message: 'Server error while fetching property reviews' });
   }
 };
 

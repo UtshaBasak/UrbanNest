@@ -4,7 +4,6 @@ import mongoose from 'mongoose';
 import User from '../models/User.js';
 import Property from '../models/Property.js';
 import Booking from '../models/Booking.js';
-import Transaction from '../models/Transaction.js';
 import Review from '../models/Review.js';
 import Notification from '../models/Notification.js';
 import UserRating from '../models/UserRating.js';
@@ -42,11 +41,6 @@ export const deleteCurrentUser = async (req, res) => {
       const bookings = await Booking.find(bookingFilter, '_id').session(session);
       const bookingIds = bookings.map(b => b._id);
 
-      // Transactions linked to bookings or tenant
-      const txFilter = bookingIds.length
-        ? { $or: [ { booking: { $in: bookingIds } }, { tenant: userId } ] }
-        : { tenant: userId };
-
       // Reviews by tenant or on owner's properties
       const reviewFilter = user.role === 'owner'
         ? { $or: [ { tenant: userId }, { property: { $in: propertyIds } } ] }
@@ -64,8 +58,6 @@ export const deleteCurrentUser = async (req, res) => {
         propertyIds.length ? Property.deleteMany({ _id: { $in: propertyIds } }).session(session) : Promise.resolve(),
         // Bookings
         Booking.deleteMany(bookingFilter).session(session),
-        // Transactions
-        Transaction.deleteMany(txFilter).session(session),
         // Reviews
         Review.deleteMany(reviewFilter).session(session),
         // Notifications

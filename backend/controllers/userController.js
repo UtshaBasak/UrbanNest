@@ -33,7 +33,6 @@ export const updateUserProfile = async (req, res) => {
 import User from '../models/User.js';
 import Property from '../models/Property.js';
 import Booking from '../models/Booking.js';
-import Transaction from '../models/Transaction.js';
 import Review from '../models/Review.js';
 import Notification from '../models/Notification.js';
 import UserRating from '../models/UserRating.js';
@@ -231,7 +230,6 @@ export const deleteUser = async (req, res) => {
         const propIds = properties.map(p => p._id);
         if (propIds.length) {
           await Booking.deleteMany({ property: { $in: propIds } }).session(session);
-          await Transaction.deleteMany({ property: { $in: propIds } }).session(session);
           await Review.deleteMany({ property: { $in: propIds } }).session(session);
           await Notification.deleteMany({ $or: [ { property: { $in: propIds } }, { recipient: user._id } ] }).session(session);
           await Property.deleteMany({ _id: { $in: propIds } }).session(session);

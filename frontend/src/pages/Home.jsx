@@ -408,7 +408,7 @@ const Home = () => {
             <div className="text-center text-neutral-500 dark:text-neutral-400 text-lg">No recently viewed properties yet.</div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {recentlyViewed.map((property) => (
+              {recentlyViewed.slice(0, 6).map((property) => (
                 <Link
                   key={property._id}
                   to={`/properties/${property._id}`}

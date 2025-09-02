@@ -12,12 +12,10 @@ import authRoutes from './routes/authRoutes.js';
 import propertyRoutes from './routes/propertyRoutes.js';
 import bookingRoutes from './routes/bookingRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
-import transactionRoutes from './routes/transactionRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import ratingRoutes from './routes/ratingRoutes.js';
 import leaveRequestRoutes from './routes/leaveRequestRoutes.js';
-import { startRemindersScheduler } from './schedulers/reminders.js';
 
 // Import config
 import connectDB from './config/db.js';
@@ -95,7 +93,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/properties', propertyRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/reviews', reviewRoutes);
-app.use('/api/transactions', transactionRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/ratings', ratingRoutes);
@@ -125,10 +122,4 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV}`);
-  // Start background schedulers (e.g., due payment reminders)
-  try {
-    startRemindersScheduler();
-  } catch (e) {
-    console.error('Failed to start schedulers:', e?.message || e);
-  }
 });

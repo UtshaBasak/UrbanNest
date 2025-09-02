@@ -52,9 +52,22 @@ const PropertyReviewNew = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!eligible) return;
+    
+    // Client-side validation
+    if (comment.trim().length < 10) {
+      setError('Review comment must be at least 10 characters long.');
+      return;
+    }
+    
+    if (comment.trim().length > 500) {
+      setError('Review comment must not exceed 500 characters.');
+      return;
+    }
+    
     try {
       setSubmitting(true);
-      await createReview({ property: id, rating: Number(rating), comment });
+      setError(''); // Clear any previous errors
+      await createReview({ property: id, rating: Number(rating), comment: comment.trim() });
       // Redirect to the property's reviews page
       navigate(`/properties/${id}/reviews`);
     } catch (e) {
@@ -121,6 +134,12 @@ const PropertyReviewNew = () => {
             </div>
           )}
 
+          {eligible && error && (
+            <div className="p-4 rounded-md bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 mb-6">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
@@ -134,15 +153,21 @@ const PropertyReviewNew = () => {
 
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                Your review (optional)
+                Your review <span className="text-red-500">*</span>
               </label>
               <textarea
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 rows={5}
-                placeholder="What did you like or dislike? Any tips for future tenants?"
+                placeholder="What did you like or dislike? Any tips for future tenants? (minimum 10 characters)"
                 className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent resize-none"
+                required
+                minLength={10}
+                maxLength={500}
               />
+              <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                {comment.length}/500 characters (minimum 10 required)
+              </div>
             </div>
 
             <div className="flex gap-3">
@@ -155,7 +180,7 @@ const PropertyReviewNew = () => {
               </button>
               <button
                 type="submit"
-                disabled={!eligible || submitting}
+                disabled={!eligible || submitting || comment.trim().length < 10 || comment.trim().length > 500}
                 className="flex-1 bg-cyan-600 hover:bg-cyan-700 disabled:bg-cyan-400 text-white font-medium py-2 px-4 rounded-lg transition-colors"
               >
                 {submitting ? 'Submitting...' : 'Submit Review'}

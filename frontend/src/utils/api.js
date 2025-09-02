@@ -41,32 +41,6 @@ export const login = async (email, password) => {
   return handleResponse(response);
 };
 
-export const createMonthlyPayment = async ({ bookingId, month, year, monthName, amount, totalExpected, paymentMethod = 'credit_card' }) => {
-  const response = await fetch(`${API_BASE_URL}/transactions/monthly-pay`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include',
-    body: JSON.stringify({ bookingId, month, year, monthName, amount, totalExpected, paymentMethod }),
-  });
-  return handleResponse(response);
-};
-
-export const deleteTransaction = async (id) => {
-  const response = await fetch(`${API_BASE_URL}/transactions/${id}`, {
-    method: 'DELETE',
-    credentials: 'include',
-  });
-  return handleResponse(response);
-};
-
-export const getTransactionsByProperty = async (propertyId) => {
-  const response = await fetch(`${API_BASE_URL}/transactions/property/${propertyId}`, {
-    credentials: 'include',
-  });
-  return handleResponse(response);
-};
 
 export const register = async (userData) => {
   const response = await fetch(`${API_BASE_URL}/auth/register`, {
@@ -259,6 +233,28 @@ export const getMyReviews = async (params = {}) => {
   return handleResponse(response);
 };
 
+export const getMyPropertiesReviews = async (params = {}) => {
+  const searchParams = new URLSearchParams();
+  Object.keys(params).forEach(key => {
+    if (params[key] !== undefined && params[key] !== '') {
+      searchParams.append(key, params[key]);
+    }
+  });
+  
+  const response = await fetch(`${API_BASE_URL}/reviews/my-properties?${searchParams}`, {
+    credentials: 'include',
+  });
+  return handleResponse(response);
+};
+
+export const deleteReview = async (reviewId) => {
+  const response = await fetch(`${API_BASE_URL}/reviews/${reviewId}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+  return handleResponse(response);
+};
+
 // User API functions
 export const getUser = async (id) => {
   const response = await fetch(`${API_BASE_URL}/users/${id}`, {
@@ -302,33 +298,6 @@ export const getUsers = async (params = {}) => {
   });
   
   const response = await fetch(`${API_BASE_URL}/users?${searchParams}`);
-  return handleResponse(response);
-};
-
-// Transaction API functions
-export const getMyTransactions = async (params = {}) => {
-  const searchParams = new URLSearchParams();
-  Object.keys(params).forEach(key => {
-    if (params[key] !== undefined && params[key] !== '') {
-      searchParams.append(key, params[key]);
-    }
-  });
-  
-  const response = await fetch(`${API_BASE_URL}/transactions/my?${searchParams}`, {
-    credentials: 'include',
-  });
-  return handleResponse(response);
-};
-
-export const processPayment = async (transactionId, paymentMethod = 'credit_card', desiredStatus) => {
-  const response = await fetch(`${API_BASE_URL}/transactions/${transactionId}/pay`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include',
-    body: JSON.stringify({ paymentMethod, desiredStatus }),
-  });
   return handleResponse(response);
 };
 

@@ -310,13 +310,13 @@ const Navbar = () => {
                           onClick={() => { navigate('/profile-status'); setShowProfileMenu(false); }}
                           className="w-full px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-left"
                         >
-                          Profile
+                          My Profile
                         </button>
                         <button
                           onClick={() => { navigate('/profile-settings'); setShowProfileMenu(false); }}
                           className="w-full px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-left"
                         >
-                          Settings
+                          Edit Profile
                         </button>
                         <button
                           onClick={handleLogout}
@@ -395,8 +395,8 @@ const Navbar = () => {
                 {user ? (
                   <>
                     <Link to="/dashboard" onClick={() => setShowFloatingMenu(false)} className="block px-3 py-2 rounded-lg hover:bg-cyan-100 dark:hover:bg-cyan-900/50 text-sm font-medium text-cyan-600 dark:text-cyan-400">Dashboard</Link>
-                    <button onClick={() => { navigate('/profile-status'); setShowFloatingMenu(false); }} className="w-full text-left px-3 py-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm font-medium text-neutral-700 dark:text-neutral-200">Profile</button>
-                    <button onClick={() => { navigate('/profile-settings'); setShowFloatingMenu(false); }} className="w-full text-left px-3 py-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm font-medium text-neutral-700 dark:text-neutral-200">Settings</button>
+                    <button onClick={() => { navigate('/profile-status'); setShowFloatingMenu(false); }} className="w-full text-left px-3 py-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm font-medium text-neutral-700 dark:text-neutral-200">My Profile</button>
+                    <button onClick={() => { navigate('/profile-settings'); setShowFloatingMenu(false); }} className="w-full text-left px-3 py-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm font-medium text-neutral-700 dark:text-neutral-200">Edit Profile</button>
                     <button onClick={async () => { await logout(); navigate('/'); setShowFloatingMenu(false); }} className="w-full text-left px-3 py-2 rounded-lg hover:bg-error-50/60 dark:hover:bg-error-900/20 text-sm font-medium text-error-700 dark:text-error-400">Logout</button>
                   </>
                 ) : (

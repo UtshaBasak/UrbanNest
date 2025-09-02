@@ -4,6 +4,7 @@ import {
   createReview,
   getPropertyReviews,
   getMyReviews,
+  getMyPropertiesReviews,
   updateReview,
   deleteReview,
   canReviewCheck
@@ -31,6 +32,7 @@ router.post('/',
 
 router.get('/property/:propertyId', getPropertyReviews);
 router.get('/my', authenticateToken, getMyReviews);
+router.get('/my-properties', authenticateToken, authorize('owner'), getMyPropertiesReviews);
 
 router.put('/:id', 
   authenticateToken, 
