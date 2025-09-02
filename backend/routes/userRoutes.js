@@ -1,5 +1,6 @@
 import express from 'express';
 import { body } from 'express-validator';
+
 import {
   getUsers,
   getUser,
@@ -9,7 +10,8 @@ import {
   canViewTenantContact,
   getMyFavourites,
   addFavourite,
-  removeFavourite
+  removeFavourite,
+  updateUserProfile
 } from '../controllers/userController.js';
 import { authenticateToken, authorize } from '../middleware/auth.js';
 
@@ -19,6 +21,9 @@ const router = express.Router();
 const statusUpdateValidation = [
   body('isActive').isBoolean().withMessage('isActive must be a boolean')
 ];
+
+// Update user profile (self or admin)
+router.put('/:id', authenticateToken, updateUserProfile);
 
 // Routes
 // Public user listing to support Owners/Tenants directory pages

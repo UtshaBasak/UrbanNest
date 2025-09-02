@@ -125,10 +125,7 @@ const Register = () => {
       <div className="w-full max-w-md">
         <div className="card p-8 animate-slide-up">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold gradient-text mb-2">Create Account</h1>
-            <p className="text-neutral-600 dark:text-neutral-400">
-              Join UrbanNest to find your perfect rental
-            </p>
+            <h1 className="text-3xl font-bold gradient-text mb-2">Create Your Account</h1>
           </div>
 
           {errors.submit && (
@@ -180,7 +177,7 @@ const Register = () => {
                   autoCorrect="off"
                   inputMode="email"
                   className={`w-full h-11 rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 ${errors.email ? 'focus:ring-error-500 border-error-500' : 'focus:ring-cyan-600'} pl-12 pr-12`}
-                  placeholder="Enter your email"
+                  placeholder="Enter your email address"
                 />
               </div>
               {errors.email && <p className="form-error">{errors.email}</p>}
@@ -188,7 +185,7 @@ const Register = () => {
 
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                Profile Photo (optional)
+                Profile Picture (optional)
               </label>
               <div className="flex items-center gap-4">
                 {formData.profileImage ? (

@@ -1,29 +1,46 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { MapPin, Star, Filter, Search, Grid, List, ChevronDown } from 'lucide-react';
 import { getProperties } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 
 const Properties = () => {
+  const location = useLocation();
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const { user } = useAuth();
+  // Helper to get search param from URL
+  const getSearchParam = () => {
+    const params = new URLSearchParams(location.search);
+    return params.get('search') || '';
+  };
+
   const [filters, setFilters] = useState({
-    search: '',
-    minPrice: '',
-    maxPrice: '',
-    availabilityStatus: '', 
-    sortBy: 'createdAt'
-  });
-  const [draftFilters, setDraftFilters] = useState({
-    search: '',
+    search: getSearchParam(),
     minPrice: '',
     maxPrice: '',
     availabilityStatus: '',
-    sortBy: 'createdAt'
+    type: '',
+    sortBy: 'createdAt',
+    limit: 1000
   });
+  const [draftFilters, setDraftFilters] = useState({
+    search: getSearchParam(),
+    minPrice: '',
+    maxPrice: '',
+    availabilityStatus: '',
+    type: '',
+    sortBy: 'createdAt',
+    limit: 1000
+  });
+  // Update filters if URL search param changes
+  useEffect(() => {
+    const urlSearch = getSearchParam();
+    setFilters((prev) => ({ ...prev, search: urlSearch }));
+    setDraftFilters((prev) => ({ ...prev, search: urlSearch }));
+  }, [location.search]);
   const [viewMode, setViewMode] = useState('grid');
   const [showFilters, setShowFilters] = useState(false);
 
@@ -186,6 +203,23 @@ const Properties = () => {
                   placeholder="Max price"
                   className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                  Type
+                </label>
+                <select
+                  value={draftFilters.type || ''}
+                  onChange={(e) => handleDraftChange('type', e.target.value)}
+                  className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                >
+                  <option value="">All</option>
+                  <option value="Apartment">Apartment</option>
+                  <option value="House">House</option>
+                  <option value="Shop">Shop</option>
+                  <option value="Commercial Space">Commercial Space</option>
+                  <option value="Land">Land</option>
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">

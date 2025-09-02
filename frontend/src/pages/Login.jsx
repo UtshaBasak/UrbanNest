@@ -48,7 +48,7 @@ const Login = () => {
       <div className="w-full max-w-md">
         <div className="card p-8 animate-slide-up">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold gradient-text mb-2">Welcome Back</h1>
+            <h1 className="text-3xl font-bold gradient-text mb-2">Welcome Back!</h1>
             <p className="text-neutral-600 dark:text-neutral-400">
               Sign in to access your account
             </p>
@@ -81,7 +81,7 @@ const Login = () => {
                   autoCorrect="off"
                   inputMode="email"
                   className="w-full rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 px-4 py-3 pl-11 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  placeholder="Enter your email"
+                  placeholder="Enter your email address"
                 />
               </div>
             </div>

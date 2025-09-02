@@ -1,3 +1,68 @@
+// @desc Get suggested properties for a user based on favorites and bookings
+// @route GET /api/properties/suggested
+// @access Private
+export const getSuggestedProperties = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    // Get user with favorites
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Get favorite property IDs
+    const favPropertyIds = user.favourites
+      .filter(fav => fav.itemType === 'property')
+      .map(fav => fav.itemId);
+
+    // Get property IDs from user's bookings
+    const bookings = await Booking.find({ tenant: userId }).select('property');
+    const bookedPropertyIds = bookings.map(b => b.property);
+
+    // Combine and deduplicate property IDs
+    const activityPropertyIds = Array.from(new Set([
+      ...favPropertyIds.map(id => id.toString()),
+      ...bookedPropertyIds.map(id => id.toString())
+    ]));
+
+    // Find properties similar to user's activity
+    let suggested = [];
+    if (activityPropertyIds.length > 0) {
+      // Get types and locations of activity properties
+      const activityProps = await Property.find({ _id: { $in: activityPropertyIds } });
+      const types = Array.from(new Set(activityProps.map(p => p.type).filter(Boolean)));
+      const locations = Array.from(new Set(activityProps.map(p => p.location).filter(Boolean)));
+
+      // Find properties matching type or location, not already in activity
+      suggested = await Property.find({
+        isActive: true,
+        _id: { $nin: activityPropertyIds },
+        $or: [
+          { type: { $in: types } },
+          { location: { $in: locations } }
+        ]
+      })
+        .sort({ createdAt: -1 })
+        .limit(8)
+        .populate('owner', 'name email phone');
+    }
+
+    // If not enough, fill with recent properties
+    if (suggested.length < 8) {
+      const more = await Property.find({
+        isActive: true,
+        _id: { $nin: [...activityPropertyIds, ...suggested.map(p => p._id.toString())] }
+      })
+        .sort({ createdAt: -1 })
+        .limit(8 - suggested.length)
+        .populate('owner', 'name email phone');
+      suggested = [...suggested, ...more];
+    }
+
+    res.json({ data: suggested });
+  } catch (error) {
+    console.error('Get suggested properties error:', error);
+    res.status(500).json({ message: 'Server error while fetching suggested properties' });
+  }
+};
 import { validationResult } from 'express-validator';
 import Property from '../models/Property.js';
 import User from '../models/User.js';
@@ -34,10 +99,11 @@ export const getProperties = async (req, res) => {
       if (maxPrice) query.price.$lte = Number(maxPrice);
     }
 
-    // Other filters
-    if (bedrooms) query.bedrooms = Number(bedrooms);
-    if (propertyType) query.propertyType = propertyType;
-    if (availabilityStatus) query.availabilityStatus = availabilityStatus;
+  // Other filters
+  if (bedrooms) query.bedrooms = Number(bedrooms);
+  if (propertyType) query.propertyType = propertyType;
+  if (req.query.type) query.type = req.query.type;
+  if (availabilityStatus) query.availabilityStatus = availabilityStatus;
 
     // Search in title and location
     if (search) {

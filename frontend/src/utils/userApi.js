@@ -1,3 +1,15 @@
+// Update user profile (self or admin)
+export const updateUserProfile = async (userId, profileData) => {
+  const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(profileData),
+  });
+  return handleResponse(response);
+};
 const API_BASE_URL = '/api';
 
 // Helper function to handle API responses

@@ -5,24 +5,33 @@ import { getPropertiesByOwner, deleteCurrentUser } from '../utils/api';
 import { Save, Building2, Edit, Eye } from 'lucide-react';
 
 const ProfileSettings = () => {
-  const { user, updateProfile: updateAuthProfile } = useAuth();
-  const { logout } = useAuth();
+  const { user, loading, updateProfile: updateAuthProfile, logout } = useAuth();
   const navigate = useNavigate();
-  const [editForm, setEditForm] = useState({ name: '', phone: '', profileImage: '' });
+  const [editForm, setEditForm] = useState({ name: '', phone: '', profileImage: '', role: '' });
   const [saving, setSaving] = useState(false);
   const [ownerProps, setOwnerProps] = useState([]);
-  const isOwner = user?.role === 'owner';
+  const isOwner = (editForm.role || user?.role) === 'owner';
 
   useEffect(() => {
     if (user) {
-      setEditForm({ name: user.name || '', phone: user.phone || '', profileImage: user.profileImage || '' });
-      if (isOwner) {
-        getPropertiesByOwner(user._id || user.id)
-          .then(res => setOwnerProps(res.data.properties || []))
-          .catch(() => setOwnerProps([]));
-      }
+      setEditForm({
+        name: user.name || '',
+        phone: user.phone || '',
+        profileImage: user.profileImage || '',
+        role: user.role || 'tenant',
+      });
     }
   }, [user]);
+
+  useEffect(() => {
+    if (editForm.role === 'owner' && user) {
+      getPropertiesByOwner(user._id || user.id)
+        .then(res => setOwnerProps(res.data.properties || []))
+        .catch(() => setOwnerProps([]));
+    } else {
+      setOwnerProps([]);
+    }
+  }, [editForm.role, user]);
 
   const handleImageFile = (file) => {
     if (!file) return;
@@ -43,6 +52,13 @@ const ProfileSettings = () => {
       setSaving(false);
     }
   };
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center text-lg">Loading...</div>;
+  }
+  if (!user) {
+    return <div className="min-h-screen flex items-center justify-center text-lg text-red-600">You must be logged in to view this page.</div>;
+  }
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 py-8">
@@ -72,6 +88,19 @@ const ProfileSettings = () => {
                   className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white"
                   required
                 />
+              </div>
+              <div>
+                <label className="block text-sm mb-2 text-neutral-700 dark:text-neutral-300">Role</label>
+                <select
+                  value={editForm.role}
+                  onChange={e => setEditForm(p => ({ ...p, role: e.target.value }))}
+                  className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white"
+                  required
+                >
+                  <option value="tenant">Tenant</option>
+                  <option value="owner">Owner</option>
+                </select>
+                <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">Switching role will affect your available features.</p>
               </div>
               <div>
                 <label className="block text-sm mb-2 text-neutral-700 dark:text-neutral-300">Phone</label>

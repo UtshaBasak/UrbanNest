@@ -52,7 +52,7 @@ const propertySchema = new mongoose.Schema({
   // Frontend uses `type` field; keep a relaxed enum
   type: {
     type: String,
-    enum: ['Apartment', 'House', 'Studio', 'Condo', 'Villa']
+    enum: ['Apartment', 'House', 'Shop', 'Commercial Space', 'Land']
   },
   images: [{
     type: String
@@ -62,7 +62,7 @@ const propertySchema = new mongoose.Schema({
   }],
   availabilityStatus: {
     type: String,
-    enum: ['Available', 'Booked', 'Not Available'],
+    enum: ['Available', 'Booked', 'Not Available', 'Under Construction', 'Pre-booking Available'],
     default: 'Available'
   },
   isActive: {

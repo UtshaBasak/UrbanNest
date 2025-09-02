@@ -30,6 +30,24 @@ const PropertyDetails = () => {
     if (id) {
       fetchPropertyDetails();
       fetchPropertyReviews();
+      // Add to recently viewed in localStorage
+      try {
+        const key = 'recentlyViewedProperties';
+        let arr = [];
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          arr = JSON.parse(raw);
+        }
+        // Remove if already present
+        arr = arr.filter(pid => pid !== id);
+        // Add to front
+        arr.unshift(id);
+        // Limit to 8
+        if (arr.length > 8) arr = arr.slice(0, 8);
+        localStorage.setItem(key, JSON.stringify(arr));
+      } catch (e) {
+        // ignore localStorage errors
+      }
     }
   }, [id]);
 
@@ -303,6 +321,29 @@ const PropertyDetails = () => {
             >
               <Share2 className="h-5 w-5 text-neutral-600 dark:text-neutral-400" />
             </button>
+            <button
+              onClick={() => {
+                try {
+                  const key = 'compareProperties';
+                  let arr = [];
+                  const raw = localStorage.getItem(key);
+                  if (raw) arr = JSON.parse(raw);
+                  // Remove if already present
+                  arr = arr.filter(pid => pid !== id);
+                  // Add to end
+                  arr.push(id);
+                  // Limit to 2
+                  if (arr.length > 2) arr = arr.slice(-2);
+                  localStorage.setItem(key, JSON.stringify(arr));
+                  alert('Added to compare!');
+                } catch {
+                  alert('Failed to add to compare');
+                }
+              }}
+              className="p-2 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white shadow-md transition-shadow"
+            >
+              Add to compare
+            </button>
           </div>
         </div>
 
@@ -364,14 +405,7 @@ const PropertyDetails = () => {
                     );
                   })()}
                 </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => navigate(`/map?propertyId=${property._id}`)}
-                    className="inline-flex items-center px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors"
-                  >
-                    View Location
-                  </button>
-                </div>
+
               </div>
               {/* Single availability tag above monthly rent */}
               {(property.availabilityStatus || property.availability) && (
@@ -551,9 +585,6 @@ const PropertyDetails = () => {
                       {property.availabilityStatus || property.availability}
                     </button>
                   )}
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-2 text-center">
-                    You won't be charged yet
-                  </p>
                 </div>
               )}
 

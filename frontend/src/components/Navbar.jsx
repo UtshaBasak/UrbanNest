@@ -160,13 +160,35 @@ const Navbar = () => {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Search properties, owners, tenants..."
+                  placeholder="Search for your desired properties ..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onFocus={handleSearchFocus}
                   onBlur={handleSearchBlur}
-                  className="w-48 lg:w-64 xl:w-72 pl-4 pr-4 py-2 bg-white/80 dark:bg-neutral-800/80 border border-white/30 dark:border-neutral-700/50 rounded-full text-sm placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-transparent backdrop-blur-sm transition-all duration-200"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && searchQuery.trim()) {
+                      navigate(`/properties?search=${encodeURIComponent(searchQuery.trim())}`);
+                      setShowSearchDropdown(false);
+                    }
+                  }}
+                  className="w-48 lg:w-64 xl:w-72 pl-4 pr-10 py-2 bg-white/80 dark:bg-neutral-800/80 border border-white/30 dark:border-neutral-700/50 rounded-full text-sm placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-transparent backdrop-blur-sm transition-all duration-200 text-neutral-900 dark:text-white"
                 />
+                <button
+                  type="button"
+                  aria-label="Search"
+                  onClick={() => {
+                    if (searchQuery.trim()) {
+                      navigate(`/properties?search=${encodeURIComponent(searchQuery.trim())}`);
+                      setShowSearchDropdown(false);
+                    }
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-neutral-500 hover:text-cyan-600 dark:text-neutral-300 dark:hover:text-cyan-400 focus:outline-none"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <circle cx="11" cy="11" r="7" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                </button>
               </div>
               {showSearchDropdown && (
                 <SearchDropdown 
@@ -184,20 +206,6 @@ const Navbar = () => {
               Properties
             </Link>
             <Link
-              to="/map"
-              className="px-3 py-2 rounded-full text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 transition-all duration-200"
-            >
-              Map
-            </Link>
-            {user && (
-              <Link
-                to="/notifications"
-                className="px-3 py-2 rounded-full text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 transition-all duration-200"
-              >
-                Notifications
-              </Link>
-            )}
-            <Link
               to="/owners"
               className="px-3 py-2 rounded-full text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 transition-all duration-200"
             >
@@ -208,6 +216,20 @@ const Navbar = () => {
               className="px-3 py-2 rounded-full text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 transition-all duration-200"
             >
               Tenants
+            </Link>
+            {user && (
+              <Link
+                to="/notifications"
+                className="px-3 py-2 rounded-full text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 transition-all duration-200"
+              >
+                Notifications
+              </Link>
+            )}
+            <Link
+              to="/compare"
+              className="px-3 py-2 rounded-full text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 transition-all duration-200"
+            >
+              Compare
             </Link>
             {user?.role === 'tenant' && (
               <Link
@@ -288,7 +310,7 @@ const Navbar = () => {
                           onClick={() => { navigate('/profile-status'); setShowProfileMenu(false); }}
                           className="w-full px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-left"
                         >
-                          Profile Status
+                          Profile
                         </button>
                         <button
                           onClick={() => { navigate('/profile-settings'); setShowProfileMenu(false); }}
@@ -360,50 +382,22 @@ const Navbar = () => {
               <div className="space-y-2">
                 <Link to="/" onClick={() => setShowFloatingMenu(false)} className="block px-3 py-2 rounded-lg hover:bg-cyan-100 dark:hover:bg-cyan-900/50 text-sm font-medium text-neutral-900 dark:text-neutral-100">Home</Link>
                 <Link to="/properties" onClick={() => setShowFloatingMenu(false)} className="block px-3 py-2 rounded-lg hover:bg-cyan-100 dark:hover:bg-cyan-900/50 text-sm font-medium text-neutral-900 dark:text-neutral-100">Properties</Link>
-                <Link to="/map" onClick={() => setShowFloatingMenu(false)} className="block px-3 py-2 rounded-lg hover:bg-cyan-100 dark:hover:bg-cyan-900/50 text-sm font-medium text-neutral-900 dark:text-neutral-100">Map</Link>
                 <Link to="/owners" onClick={() => setShowFloatingMenu(false)} className="block px-3 py-2 rounded-lg hover:bg-cyan-100 dark:hover:bg-cyan-900/50 text-sm font-medium text-neutral-900 dark:text-neutral-100">Owners</Link>
                 <Link to="/tenants" onClick={() => setShowFloatingMenu(false)} className="block px-3 py-2 rounded-lg hover:bg-cyan-100 dark:hover:bg-cyan-900/50 text-sm font-medium text-neutral-900 dark:text-neutral-100">Tenants</Link>
-                {user?.role === 'tenant' && (
-                  <Link to="/favourites" onClick={() => setShowFloatingMenu(false)} className="block px-3 py-2 rounded-lg hover:bg-cyan-100 dark:hover:bg-cyan-900/50 text-sm font-medium text-neutral-900 dark:text-neutral-100">Favourites</Link>
-                )}
                 {user && (
                   <Link to="/notifications" onClick={() => setShowFloatingMenu(false)} className="block px-3 py-2 rounded-lg hover:bg-cyan-100 dark:hover:bg-cyan-900/50 text-sm font-medium text-neutral-900 dark:text-neutral-100">Notifications</Link>
+                )}
+                <Link to="/compare" onClick={() => setShowFloatingMenu(false)} className="block px-3 py-2 rounded-lg hover:bg-cyan-100 dark:hover:bg-cyan-900/50 text-sm font-medium text-neutral-900 dark:text-neutral-100">Compare</Link>
+                {user?.role === 'tenant' && (
+                  <Link to="/favourites" onClick={() => setShowFloatingMenu(false)} className="block px-3 py-2 rounded-lg hover:bg-cyan-100 dark:hover:bg-cyan-900/50 text-sm font-medium text-neutral-900 dark:text-neutral-100">Favourites</Link>
                 )}
                 <div className="h-px bg-neutral-200 dark:bg-neutral-800 my-2" />
                 {user ? (
                   <>
-                    {/* Profile submenu */}
-                    <button
-                      onClick={() => setShowProfileSubmenu((v) => !v)}
-                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-cyan-100 dark:hover:bg-cyan-900/50 text-sm font-medium text-cyan-600 dark:text-cyan-400"
-                      aria-expanded={showProfileSubmenu}
-                      aria-controls="profile-submenu"
-                    >
-                      Profile
-                    </button>
-                    {showProfileSubmenu && (
-                      <div id="profile-submenu" className="pl-3 space-y-1">
-                        <button
-                          onClick={() => { navigate('/profile-status'); setShowFloatingMenu(false); setShowProfileSubmenu(false); }}
-                          className="w-full text-left px-3 py-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm font-medium text-neutral-700 dark:text-neutral-200"
-                        >
-                          Profile Status
-                        </button>
-                        <button
-                          onClick={() => { navigate('/profile-settings'); setShowFloatingMenu(false); setShowProfileSubmenu(false); }}
-                          className="w-full text-left px-3 py-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm font-medium text-neutral-700 dark:text-neutral-200"
-                        >
-                          Settings
-                        </button>
-                        <button
-                          onClick={async () => { await logout(); navigate('/'); setShowFloatingMenu(false); setShowProfileSubmenu(false); }}
-                          className="w-full text-left px-3 py-2 rounded-lg hover:bg-error-50/60 dark:hover:bg-error-900/20 text-sm font-medium text-error-700 dark:text-error-400"
-                        >
-                          Logout
-                        </button>
-                      </div>
-                    )}
-                    <Link to="/dashboard" onClick={() => { setShowFloatingMenu(false); setShowProfileSubmenu(false); }} className="block px-3 py-2 rounded-lg hover:bg-cyan-100 dark:hover:bg-cyan-900/50 text-sm font-medium text-cyan-600 dark:text-cyan-400">Dashboard</Link>
+                    <Link to="/dashboard" onClick={() => setShowFloatingMenu(false)} className="block px-3 py-2 rounded-lg hover:bg-cyan-100 dark:hover:bg-cyan-900/50 text-sm font-medium text-cyan-600 dark:text-cyan-400">Dashboard</Link>
+                    <button onClick={() => { navigate('/profile-status'); setShowFloatingMenu(false); }} className="w-full text-left px-3 py-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm font-medium text-neutral-700 dark:text-neutral-200">Profile</button>
+                    <button onClick={() => { navigate('/profile-settings'); setShowFloatingMenu(false); }} className="w-full text-left px-3 py-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm font-medium text-neutral-700 dark:text-neutral-200">Settings</button>
+                    <button onClick={async () => { await logout(); navigate('/'); setShowFloatingMenu(false); }} className="w-full text-left px-3 py-2 rounded-lg hover:bg-error-50/60 dark:hover:bg-error-900/20 text-sm font-medium text-error-700 dark:text-error-400">Logout</button>
                   </>
                 ) : (
                   <>

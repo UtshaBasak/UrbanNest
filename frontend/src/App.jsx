@@ -15,7 +15,6 @@ import EditProperty from './pages/EditProperty';
 import Owners from './pages/Owners';
 import Tenants from './pages/Tenants';
 import OwnerProperties from './pages/OwnerProperties';
-import MapPage from './pages/Map';
 import Notifications from './pages/Notifications';
 import ProfileSettings from './pages/ProfileSettings';
 import ProfileStatus from './pages/ProfileStatus';
@@ -23,6 +22,7 @@ import UserRatings from './pages/UserRatings';
 import PropertyReviews from './pages/PropertyReviews';
 import PropertyReviewNew from './pages/PropertyReviewNew';
 import Favourites from './pages/Favourites';
+import Compare from './pages/Compare';
 import ProtectedRoute from './components/ProtectedRoute';
 import LeaveRequests from './pages/LeaveRequests';
 import LeaveRequestNew from './pages/LeaveRequestNew';
@@ -36,6 +36,7 @@ function App() {
             <Navbar />
             <main className="pt-20">
               <Routes>
+                <Route path="/compare" element={<Compare />} />
                 <Route path="/" element={<Home />} />
                 <Route path="/properties" element={<Properties />} />
                 <Route 
@@ -60,7 +61,7 @@ function App() {
                 <Route path="/owners" element={<Owners />} />
                 <Route path="/tenants" element={<Tenants />} />
                 <Route path="/owners/:id/properties" element={<OwnerProperties />} />
-                <Route path="/map" element={<MapPage />} />
+                {/* Map page removed */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/users/:id" element={<UserProfile />} />

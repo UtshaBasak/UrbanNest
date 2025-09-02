@@ -64,7 +64,9 @@ export const AuthProvider = ({ children }) => {
 
   const updateProfile = async (profileData) => {
     try {
-      const response = await authAPI.updateProfile(profileData);
+      const userId = user?._id || user?.id;
+      if (!userId) throw new Error('No user');
+      const response = await authAPI.updateProfile(userId, profileData);
       setUser(response.data.user);
       return response.data;
     } catch (error) {

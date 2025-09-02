@@ -164,7 +164,7 @@ const ProfileStatus = () => {
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">Profile Status</h1>
+          <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">Profile</h1>
         </div>
 
         {/* My Rating */}
@@ -365,7 +365,7 @@ const ProfileStatus = () => {
             </Section>
 
             {/* Tenant Payment Form */}
-            <Section title="Make a Payment">
+            <Section title="Pay Rent">
               <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
                 <select className="border rounded p-2 dark:bg-neutral-800 dark:border-neutral-700" value={payBookingId} onChange={(e) => {
                   const bookingId = e.target.value;

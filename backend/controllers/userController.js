@@ -1,3 +1,35 @@
+// @desc Update user profile (self or admin)
+// @route PUT /api/users/:id
+// @access Private (Self or Admin)
+export const updateUserProfile = async (req, res) => {
+  try {
+    const targetId = req.params.id;
+    const isSelf = req.user && (req.user.id === targetId || String(req.user._id) === String(targetId));
+    const isAdmin = req.user && req.user.role === 'admin';
+    if (!isSelf && !isAdmin) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    const allowedFields = ['name', 'phone', 'profileImage', 'role'];
+    const updates = {};
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) updates[field] = req.body[field];
+    }
+
+    // Only allow role change to 'tenant' or 'owner' (not admin)
+    if (updates.role && !['tenant', 'owner'].includes(updates.role)) {
+      return res.status(400).json({ message: 'Invalid role' });
+    }
+
+    const user = await User.findByIdAndUpdate(targetId, updates, { new: true, runValidators: true }).select('-password');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    res.json({ message: 'Profile updated successfully', data: { user } });
+  } catch (error) {
+    console.error('Update user profile error:', error);
+    res.status(500).json({ message: 'Server error while updating profile' });
+  }
+};
 import User from '../models/User.js';
 import Property from '../models/Property.js';
 import Booking from '../models/Booking.js';

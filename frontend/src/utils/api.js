@@ -1,3 +1,10 @@
+// Suggested properties for logged-in user
+export const getSuggestedProperties = async () => {
+  const response = await fetch(`${API_BASE_URL}/properties/suggested`, {
+    credentials: 'include',
+  });
+  return handleResponse(response);
+};
 const API_BASE_URL = '/api';
 
 // Helper function to handle API responses
@@ -88,8 +95,8 @@ export const getCurrentUser = async () => {
   return handleResponse(response);
 };
 
-export const updateProfile = async (profileData) => {
-  const response = await fetch(`${API_BASE_URL}/auth/me`, {
+export const updateProfile = async (userId, profileData) => {
+  const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',

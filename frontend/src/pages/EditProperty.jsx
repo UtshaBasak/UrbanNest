@@ -16,7 +16,7 @@ const EditProperty = () => {
     latitude: '',
     longitude: '',
     price: '',
-    category: 'Apartment',
+    type: 'Apartment',
     availabilityStatus: 'Available'
   });
   const [saving, setSaving] = useState(false);
@@ -37,7 +37,7 @@ const EditProperty = () => {
           latitude: p.latitude ? p.latitude.toString() : '',
           longitude: p.longitude ? p.longitude.toString() : '',
           price: p.price || '',
-          category: p.category || 'Apartment',
+          type: p.type || 'Apartment',
           availabilityStatus: p.availabilityStatus || p.availability || 'Available',
         });
       } catch (e) {
@@ -67,7 +67,7 @@ const EditProperty = () => {
         latitude: form.latitude ? Number(form.latitude) : undefined,
         longitude: form.longitude ? Number(form.longitude) : undefined,
         price: Number(form.price),
-        category: form.category,
+        type: form.type,
         availabilityStatus: form.availabilityStatus,
       });
       navigate(`/properties/${id}`);
@@ -104,39 +104,14 @@ const EditProperty = () => {
             <label className="block text-sm text-neutral-800 dark:text-neutral-200 mb-1">Location</label>
             <input name="location" value={form.location} onChange={handleChange} className="w-full p-2 rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-cyan-600" />
           </div>
-          <div>
-            <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 mb-4">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <h3 className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Property Location</h3>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">Click the button to open map in new tab, then copy coordinates back here.</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleOpenMapInNewTab}
-                  className="flex items-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-colors"
-                >
-                  <MapPin className="h-4 w-4" />
-                  Pick from Map
-                </button>
-              </div>
-              {(form.latitude && form.longitude) && (
-                <div className="mt-2 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                  <p className="text-sm text-green-800 dark:text-green-200">
-                    📍 Location selected: {parseFloat(form.latitude).toFixed(6)}, {parseFloat(form.longitude).toFixed(6)}
-                  </p>
-                </div>
-              )}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-neutral-800 dark:text-neutral-200 mb-1">Latitude</label>
+              <input name="latitude" value={form.latitude} onChange={handleChange} placeholder="e.g., 23.8103" className="w-full p-2 rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-cyan-600" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-neutral-800 dark:text-neutral-200 mb-1">Latitude</label>
-                <input name="latitude" value={form.latitude} onChange={handleChange} placeholder="e.g., 23.8103" className="w-full p-2 rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-cyan-600" />
-              </div>
-              <div>
-                <label className="block text-sm text-neutral-800 dark:text-neutral-200 mb-1">Longitude</label>
-                <input name="longitude" value={form.longitude} onChange={handleChange} placeholder="e.g., 90.4125" className="w-full p-2 rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-cyan-600" />
-              </div>
+            <div>
+              <label className="block text-sm text-neutral-800 dark:text-neutral-200 mb-1">Longitude</label>
+              <input name="longitude" value={form.longitude} onChange={handleChange} placeholder="e.g., 90.4125" className="w-full p-2 rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-cyan-600" />
             </div>
           </div>
           <div>
@@ -144,17 +119,17 @@ const EditProperty = () => {
             <input type="number" name="price" value={form.price} onChange={handleChange} className="w-full p-2 rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-cyan-600" />
           </div>
           <div>
-            <label className="block text-sm text-neutral-800 dark:text-neutral-200 mb-1">Category</label>
-            <select name="category" value={form.category} onChange={handleChange} className="w-full p-2 rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-cyan-600">
+            <label className="block text-sm text-neutral-800 dark:text-neutral-200 mb-1">Type</label>
+            <select name="type" value={form.type} onChange={handleChange} className="w-full p-2 rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-cyan-600">
               <option>Apartment</option>
-              <option>Home</option>
-              <option>Penthouse</option>
-              <option>Studio</option>
-              <option>Villa</option>
+              <option>House</option>
+              <option>Shop</option>
+              <option>Commercial Space</option>
+              <option>Land</option>
             </select>
           </div>
           <div>
-            <label className="block text-sm text-neutral-800 dark:text-neutral-200 mb-1">Availability</label>
+            <label className="block text-sm text-neutral-800 dark:text-neutral-200 mb-1">Status</label>
             <select name="availabilityStatus" value={form.availabilityStatus} onChange={handleChange} className="w-full p-2 rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-cyan-600">
               <option>Available</option>
               <option>Booked</option>

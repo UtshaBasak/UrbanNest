@@ -7,12 +7,18 @@ import {
   updateProperty,
   deleteProperty,
   getPropertiesByOwner,
-  getTopRatedProperties
+  getTopRatedProperties,
+  getSuggestedProperties
 } from '../controllers/propertyController.js';
+// ...existing code...
 import { authenticateToken, authorize, checkOwnership } from '../middleware/auth.js';
 import Property from '../models/Property.js';
 
+
 const router = express.Router();
+
+// Suggested properties for logged-in user
+router.get('/suggested', authenticateToken, getSuggestedProperties);
 
 // Validation rules
 const propertyValidation = [
