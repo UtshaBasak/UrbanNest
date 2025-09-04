@@ -25,6 +25,7 @@ import {
   deleteBooking,
   deleteReview
 } from '../utils/api';
+import AdminDashboard from './AdminDashboard';
 
 // Helper function for booking status colors
 const getBookingStatusColor = (status) => {
@@ -44,6 +45,12 @@ const getBookingStatusColor = (status) => {
 
 const Dashboard = () => {
   const { user } = useAuth();
+  
+  // If user is admin, render admin dashboard
+  if (user?.role === 'admin') {
+    return <AdminDashboard />;
+  }
+  
   const location = useLocation();
   const [activeTab, setActiveTab] = useState('overview');
   const [data, setData] = useState({
@@ -121,9 +128,16 @@ const Dashboard = () => {
     try {
       await updateBookingStatus(bookingId, status);
       fetchDashboardData(); // Refresh data
+      if (status === 'approved') {
+        alert('Booking approved successfully!');
+      } else if (status === 'rejected') {
+        alert('Booking rejected successfully!');
+      }
     } catch (error) {
       console.error('Error updating booking status:', error);
-      alert('Failed to update booking status');
+      // Show specific conflict message if available
+      const errorMessage = error?.message || 'Failed to update booking status';
+      alert(errorMessage);
     }
   };
 

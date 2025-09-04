@@ -21,6 +21,7 @@ const ProfileStatus = () => {
   const [ownerDetails, setOwnerDetails] = useState({}); // Cache for owner details by property ID
   const [userRatings, setUserRatings] = useState([]);
   const isOwner = user?.role === 'owner';
+  const isAdmin = user?.role === 'admin';
 
   // Filters and UI state
   const [search, setSearch] = useState('');
@@ -41,12 +42,17 @@ const ProfileStatus = () => {
         setLoading(true);
         const tasks = [];
         let propsIdx = -1, bookingsIdx = -1, ratingIdx = -1, ratingsListIdx = -1;
-        if (isOwner) {
-          propsIdx = tasks.push(getPropertiesByOwner(user._id || user.id)) - 1;
+        
+        // Skip property, booking, and rating data for admin users
+        if (!isAdmin) {
+          if (isOwner) {
+            propsIdx = tasks.push(getPropertiesByOwner(user._id || user.id)) - 1;
+          }
+          bookingsIdx = tasks.push(getMyBookings()) - 1;
+          ratingIdx = tasks.push(getUserRatingSummary(user._id || user.id)) - 1;
+          ratingsListIdx = tasks.push(listUserRatings(user._id || user.id)) - 1;
         }
-        bookingsIdx = tasks.push(getMyBookings()) - 1;
-        ratingIdx = tasks.push(getUserRatingSummary(user._id || user.id)) - 1;
-        ratingsListIdx = tasks.push(listUserRatings(user._id || user.id)) - 1;
+        
         const res = await Promise.allSettled(tasks);
         if (propsIdx > -1) setOwnerProps(res[propsIdx].status === 'fulfilled' ? (res[propsIdx].value.data.properties || []) : []);
         if (bookingsIdx > -1) setBookings(res[bookingsIdx].status === 'fulfilled' ? (res[bookingsIdx].value.data.bookings || []) : []);
@@ -66,7 +72,7 @@ const ProfileStatus = () => {
       }
     };
     if (user) load();
-  }, [user, isOwner, search, refreshKey]);
+  }, [user, isOwner, isAdmin, search, refreshKey]);
 
   // Fetch owner details for properties
   const fetchOwnerDetails = async (propertyId, ownerId) => {
@@ -83,7 +89,7 @@ const ProfileStatus = () => {
 
   // Fetch owner details for all bookings
   useEffect(() => {
-    if (!isOwner && bookings.length > 0) {
+    if (!isOwner && !isAdmin && bookings.length > 0) {
       bookings.forEach(booking => {
         const propertyId = booking.property?._id;
         const ownerId = booking.property?.owner?._id || booking.property?.owner;
@@ -92,7 +98,7 @@ const ProfileStatus = () => {
         }
       });
     }
-  }, [bookings, isOwner]);
+  }, [bookings, isOwner, isAdmin]);
 
   // No category grouping per requirement
   const ownerList = useMemo(() => (isOwner ? ownerProps : []), [ownerProps, isOwner]);
@@ -140,80 +146,85 @@ const ProfileStatus = () => {
           </div>
         </Section>
 
-        {/* My Rating */}
-        <Section title="My Rating">
-          <div className="flex items-center gap-3 text-neutral-800 dark:text-neutral-100 mb-4">
-            <Star className="h-5 w-5 text-yellow-400" />
-            {isOwner ? (
-              <div>
-                <span className="font-medium">Owner Rating:</span> {Number(ratingSummary.owner.avg || 0).toFixed(1)}
-                <span className="text-neutral-500 dark:text-neutral-400"> ({ratingSummary.owner.count || 0})</span>
-              </div>
-            ) : (
-              <div>
-                <span className="font-medium">Tenant Rating:</span> {Number(ratingSummary.tenant.avg || 0).toFixed(1)}
-                <span className="text-neutral-500 dark:text-neutral-400"> ({ratingSummary.tenant.count || 0})</span>
-              </div>
-            )}
-          </div>
-          {/* Individual Ratings List */}
-          {userRatings.length === 0 ? (
-            <div className="text-neutral-500 dark:text-neutral-400">No individual ratings yet.</div>
-          ) : (
-            <div className="space-y-4">
-              {userRatings.map(rating => (
-                <div key={rating._id} className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
-                  <div className="flex items-center mb-2">
-                    {[1,2,3,4,5].map(star => (
-                      <Star key={star} className={`h-4 w-4 ${star <= Math.round(rating.rating) ? 'text-yellow-400 fill-yellow-400' : 'text-neutral-300 dark:text-neutral-700'}`} fill={star <= Math.round(rating.rating) ? 'currentColor' : 'none'} />
-                    ))}
-                    <span className="ml-2 text-sm text-neutral-600 dark:text-neutral-400">{new Date(rating.createdAt).toLocaleDateString()}</span>
-                  </div>
-                  <div className="text-sm text-neutral-700 dark:text-neutral-200 mb-1">
-                    {rating.comment || <span className="italic text-neutral-400">No comment</span>}
-                  </div>
-                  <div className="text-xs text-neutral-500 dark:text-neutral-400">
-                    By: {rating.rater?.name || 'Unknown'}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </Section>
-
-        {isOwner ? (
+        {/* Show ratings and properties only for non-admin users */}
+        {!isAdmin && (
           <>
-            <Section title="Owned Properties">
-              {ownerList.length === 0 ? (
-                <div className="text-neutral-500 dark:text-neutral-400">No properties yet.</div>
+            {/* My Rating */}
+            <Section title="My Rating">
+              <div className="flex items-center gap-3 text-neutral-800 dark:text-neutral-100 mb-4">
+                <Star className="h-5 w-5 text-yellow-400" />
+                {isOwner ? (
+                  <div>
+                    <span className="font-medium">Owner Rating:</span> {Number(ratingSummary.owner.avg || 0).toFixed(1)}
+                    <span className="text-neutral-500 dark:text-neutral-400"> ({ratingSummary.owner.count || 0})</span>
+                  </div>
+                ) : (
+                  <div>
+                    <span className="font-medium">Tenant Rating:</span> {Number(ratingSummary.tenant.avg || 0).toFixed(1)}
+                    <span className="text-neutral-500 dark:text-neutral-400"> ({ratingSummary.tenant.count || 0})</span>
+                  </div>
+                )}
+              </div>
+              {/* Individual Ratings List */}
+              {userRatings.length === 0 ? (
+                <div className="text-neutral-500 dark:text-neutral-400">No individual ratings yet.</div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {ownerList.map(p => (
-                    <div key={p._id} className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="font-semibold text-neutral-900 dark:text-white line-clamp-1">{p.title}</div>
-                          <div className="text-sm text-neutral-600 dark:text-neutral-400 flex items-center mt-1">
-                            <MapPin className="h-4 w-4 mr-1" /> {p.location || '—'}
-                          </div>
-                          <div className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
-                            ৳{(p.price || 0).toLocaleString()} / month
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => navigate(`/property/${p._id}`)}
-                          className="ml-4 p-2 rounded hover:bg-neutral-100 dark:hover:bg-neutral-700"
-                        >
-                          <ChevronRight className="h-5 w-5" />
-                        </button>
+                <div className="space-y-4">
+                  {userRatings.map(rating => (
+                    <div key={rating._id} className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+                      <div className="flex items-center mb-2">
+                        {[1,2,3,4,5].map(star => (
+                          <Star key={star} className={`h-4 w-4 ${star <= Math.round(rating.rating) ? 'text-yellow-400 fill-yellow-400' : 'text-neutral-300 dark:text-neutral-700'}`} fill={star <= Math.round(rating.rating) ? 'currentColor' : 'none'} />
+                        ))}
+                        <span className="ml-2 text-sm text-neutral-600 dark:text-neutral-400">{new Date(rating.createdAt).toLocaleDateString()}</span>
+                      </div>
+                      <div className="text-sm text-neutral-700 dark:text-neutral-200 mb-1">
+                        {rating.comment || <span className="italic text-neutral-400">No comment</span>}
+                      </div>
+                      <div className="text-xs text-neutral-500 dark:text-neutral-400">
+                        By: {rating.rater?.name || 'Unknown'}
                       </div>
                     </div>
                   ))}
                 </div>
               )}
             </Section>
+
+            {isOwner ? (
+              <>
+                <Section title="Owned Properties">
+                  {ownerList.length === 0 ? (
+                    <div className="text-neutral-500 dark:text-neutral-400">No properties yet.</div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {ownerList.map(p => (
+                        <div key={p._id} className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="font-semibold text-neutral-900 dark:text-white line-clamp-1">{p.title}</div>
+                              <div className="text-sm text-neutral-600 dark:text-neutral-400 flex items-center mt-1">
+                                <MapPin className="h-4 w-4 mr-1" /> {p.location || '—'}
+                              </div>
+                              <div className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
+                                ৳{(p.price || 0).toLocaleString()} / month
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => navigate(`/property/${p._id}`)}
+                              className="ml-4 p-2 rounded hover:bg-neutral-100 dark:hover:bg-neutral-700"
+                            >
+                              <ChevronRight className="h-5 w-5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Section>
+              </>
+            ) : null}
           </>
-        ) : null}
+        )}
       </div>
     </div>
   );

@@ -16,9 +16,14 @@ export const updateUserProfile = async (req, res) => {
       if (req.body[field] !== undefined) updates[field] = req.body[field];
     }
 
-    // Only allow role change to 'tenant' or 'owner' (not admin)
-    if (updates.role && !['tenant', 'owner'].includes(updates.role)) {
+    // Only allow role change to 'tenant', 'owner', or preserve existing 'admin'
+    if (updates.role && !['tenant', 'owner', 'admin'].includes(updates.role)) {
       return res.status(400).json({ message: 'Invalid role' });
+    }
+    
+    // Prevent non-admin users from setting admin role
+    if (updates.role === 'admin' && !isAdmin) {
+      return res.status(403).json({ message: 'Cannot set admin role' });
     }
 
     const user = await User.findByIdAndUpdate(targetId, updates, { new: true, runValidators: true }).select('-password');

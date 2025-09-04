@@ -175,9 +175,15 @@ export const login = async (req, res) => {
     const { email, password } = req.body;
 
     // Find user and include password for comparison
-    const user = await User.findOne({ email }).select('+password');
+    let user = await User.findOne({ email }).select('+password');
     if (!user || !user.isActive) {
       return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // Check if this is the admin email and update role if necessary
+    if (email === 'admin@gmail.com' && user.role !== 'admin') {
+      user.role = 'admin';
+      await user.save();
     }
 
     // Check password

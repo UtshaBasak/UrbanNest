@@ -57,6 +57,20 @@ export const getSuggestedProperties = async (req, res) => {
       suggested = [...suggested, ...more];
     }
 
+    // Add rating aggregation for all suggested properties
+    const suggestedIds = suggested.map(p => p._id);
+    const reviewAggregation = await Review.aggregate([
+      { $match: { property: { $in: suggestedIds } } },
+      { $group: { _id: '$property', averageRating: { $avg: '$rating' }, totalReviews: { $sum: 1 } } }
+    ]);
+
+    const ratingMap = new Map(reviewAggregation.map(r => [String(r._id), r]));
+    suggested = suggested.map(p => ({
+      ...p.toObject(),
+      averageRating: ratingMap.get(String(p._id))?.averageRating || 0,
+      totalReviews: ratingMap.get(String(p._id))?.totalReviews || 0
+    }));
+
     res.json({ data: suggested });
   } catch (error) {
     console.error('Get suggested properties error:', error);
@@ -180,6 +194,20 @@ export const getProperties = async (req, res) => {
       return obj;
     });
 
+    // Add rating aggregation for all properties
+    const propertyIds = properties.map(p => p._id);
+    const reviewAggregation = await Review.aggregate([
+      { $match: { property: { $in: propertyIds } } },
+      { $group: { _id: '$property', averageRating: { $avg: '$rating' }, totalReviews: { $sum: 1 } } }
+    ]);
+
+    const ratingMap = new Map(reviewAggregation.map(r => [String(r._id), r]));
+    properties = properties.map(p => ({
+      ...p,
+      averageRating: ratingMap.get(String(p._id))?.averageRating || 0,
+      totalReviews: ratingMap.get(String(p._id))?.totalReviews || 0
+    }));
+
     const total = await Property.countDocuments(query);
 
     res.json({
@@ -270,6 +298,15 @@ export const getProperty = async (req, res) => {
       property.currentTenant = { id: activeBooking.tenant._id, name: activeBooking.tenant.name };
     }
 
+    // Add rating information
+    const reviewAggregation = await Review.aggregate([
+      { $match: { property: propertyDoc._id } },
+      { $group: { _id: '$property', averageRating: { $avg: '$rating' }, totalReviews: { $sum: 1 } } }
+    ]);
+
+    property.averageRating = reviewAggregation[0]?.averageRating || 0;
+    property.totalReviews = reviewAggregation[0]?.totalReviews || 0;
+
     res.json({
       data: {
         property
@@ -316,6 +353,15 @@ export const getPropertyByPropertyId = async (req, res) => {
     if (activeBooking) {
       property.currentTenant = { id: activeBooking.tenant._id, name: activeBooking.tenant.name };
     }
+
+    // Add rating information
+    const reviewAggregation = await Review.aggregate([
+      { $match: { property: propertyDoc._id } },
+      { $group: { _id: '$property', averageRating: { $avg: '$rating' }, totalReviews: { $sum: 1 } } }
+    ]);
+
+    property.averageRating = reviewAggregation[0]?.averageRating || 0;
+    property.totalReviews = reviewAggregation[0]?.totalReviews || 0;
 
     res.json({
       data: {
@@ -467,6 +513,20 @@ export const getPropertiesByOwner = async (req, res) => {
       .limit(limit * 1)
       .skip((page - 1) * limit);
 
+    // Add rating aggregation for owner's properties
+    const propertyIds = properties.map(p => p._id);
+    const reviewAggregation = await Review.aggregate([
+      { $match: { property: { $in: propertyIds } } },
+      { $group: { _id: '$property', averageRating: { $avg: '$rating' }, totalReviews: { $sum: 1 } } }
+    ]);
+
+    const ratingMap = new Map(reviewAggregation.map(r => [String(r._id), r]));
+    const propertiesWithRatings = properties.map(p => ({
+      ...p.toObject(),
+      averageRating: ratingMap.get(String(p._id))?.averageRating || 0,
+      totalReviews: ratingMap.get(String(p._id))?.totalReviews || 0
+    }));
+
     const total = await Property.countDocuments({ 
       owner: ownerId, 
       isActive: true 
@@ -474,7 +534,7 @@ export const getPropertiesByOwner = async (req, res) => {
 
     res.json({
       data: {
-        properties,
+        properties: propertiesWithRatings,
         pagination: {
           total,
           page: Number(page),

@@ -471,3 +471,66 @@ export const decideLeaveRequest = async (id, { decision, condition, note }) => {
   });
   return handleResponse(response);
 };
+
+// Admin API functions
+export const getAdminStats = async () => {
+  const response = await fetch(`${API_BASE_URL}/admin/stats`, {
+    credentials: 'include',
+  });
+  return handleResponse(response);
+};
+
+export const getOwners = async (params = {}) => {
+  const searchParams = new URLSearchParams();
+  Object.keys(params).forEach(key => {
+    if (params[key] !== undefined && params[key] !== '') {
+      searchParams.append(key, params[key]);
+    }
+  });
+  const response = await fetch(`${API_BASE_URL}/admin/owners?${searchParams}`, {
+    credentials: 'include',
+  });
+  return handleResponse(response);
+};
+
+export const getTenants = async (params = {}) => {
+  const searchParams = new URLSearchParams();
+  Object.keys(params).forEach(key => {
+    if (params[key] !== undefined && params[key] !== '') {
+      searchParams.append(key, params[key]);
+    }
+  });
+  const response = await fetch(`${API_BASE_URL}/admin/tenants?${searchParams}`, {
+    credentials: 'include',
+  });
+  return handleResponse(response);
+};
+
+export const getAdminProperties = async (params = {}) => {
+  const searchParams = new URLSearchParams();
+  Object.keys(params).forEach(key => {
+    if (params[key] !== undefined && params[key] !== '') {
+      searchParams.append(key, params[key]);
+    }
+  });
+  const response = await fetch(`${API_BASE_URL}/admin/properties?${searchParams}`, {
+    credentials: 'include',
+  });
+  return handleResponse(response);
+};
+
+export const deleteUserById = async (id) => {
+  const response = await fetch(`${API_BASE_URL}/admin/users/${id}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+  return handleResponse(response);
+};
+
+export const deletePropertyById = async (id) => {
+  const response = await fetch(`${API_BASE_URL}/admin/properties/${id}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+  return handleResponse(response);
+};

@@ -16,6 +16,7 @@ import userRoutes from './routes/userRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import ratingRoutes from './routes/ratingRoutes.js';
 import leaveRequestRoutes from './routes/leaveRequestRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 
 // Import config
 import connectDB from './config/db.js';
@@ -97,6 +98,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/ratings', ratingRoutes);
 app.use('/api/leave-requests', leaveRequestRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

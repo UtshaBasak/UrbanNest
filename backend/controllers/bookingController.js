@@ -3,6 +3,27 @@ import Booking from '../models/Booking.js';
 import Property from '../models/Property.js';
 import { createNotification } from './notificationController.js';
 
+// Helper function to check if property is currently occupied
+const isPropertyCurrentlyOccupied = async (propertyId) => {
+  const now = new Date();
+  const currentBookings = await Booking.find({
+    property: propertyId,
+    status: 'approved',
+    startDate: { $lte: now },
+    endDate: { $gte: now }
+  });
+  return currentBookings.length > 0;
+};
+
+// Helper function to update property availability based on current bookings
+const updatePropertyAvailability = async (propertyId) => {
+  const isOccupied = await isPropertyCurrentlyOccupied(propertyId);
+  await Property.findByIdAndUpdate(propertyId, {
+    availabilityStatus: isOccupied ? 'Booked' : 'Available',
+    availability: isOccupied ? 'Booked' : 'Available'
+  });
+};
+
 // @desc Create booking request
 // @route POST /api/bookings
 // @access Private (Tenant)
@@ -51,6 +72,47 @@ export const createBooking = async (req, res) => {
     const daysRaw = Math.ceil((end - start) / msPerDay);
     const days = Math.max(daysRaw, 1);
     const totalAmount = property.price * days;
+
+    // Check for conflicts with approved bookings
+    const conflictingBookings = await Booking.find({
+      property: propertyId,
+      status: 'approved',
+      $or: [
+        // Case 1: Existing booking starts during new booking period
+        {
+          startDate: { $gte: start, $lt: end }
+        },
+        // Case 2: Existing booking ends during new booking period
+        {
+          endDate: { $gt: start, $lte: end }
+        },
+        // Case 3: Existing booking completely encompasses new booking
+        {
+          startDate: { $lte: start },
+          endDate: { $gte: end }
+        },
+        // Case 4: New booking completely encompasses existing booking
+        {
+          startDate: { $gte: start },
+          endDate: { $lte: end }
+        }
+      ]
+    });
+
+    if (conflictingBookings.length > 0) {
+      const conflictDates = conflictingBookings.map(cb => 
+        `${new Date(cb.startDate).toLocaleDateString()} - ${new Date(cb.endDate).toLocaleDateString()}`
+      ).join(', ');
+      
+      return res.status(400).json({ 
+        message: `Cannot create booking request due to conflicts with approved bookings: ${conflictDates}`,
+        conflictingBookings: conflictingBookings.map(cb => ({
+          id: cb._id,
+          startDate: cb.startDate,
+          endDate: cb.endDate
+        }))
+      });
+    }
 
     const booking = new Booking({
       tenant: req.user._id,
@@ -167,15 +229,57 @@ export const updateBookingStatus = async (req, res) => {
       booking.rejectionReason = rejectionReason;
     }
 
+    // Check for booking conflicts if approving
+    if (status === 'approved') {
+      // Find all approved bookings for the same property
+      const conflictingBookings = await Booking.find({
+        property: booking.property._id,
+        status: 'approved',
+        _id: { $ne: booking._id }, // Exclude current booking
+        $or: [
+          // Case 1: Existing booking starts during new booking period
+          {
+            startDate: { $gte: booking.startDate, $lt: booking.endDate }
+          },
+          // Case 2: Existing booking ends during new booking period
+          {
+            endDate: { $gt: booking.startDate, $lte: booking.endDate }
+          },
+          // Case 3: Existing booking completely encompasses new booking
+          {
+            startDate: { $lte: booking.startDate },
+            endDate: { $gte: booking.endDate }
+          },
+          // Case 4: New booking completely encompasses existing booking
+          {
+            startDate: { $gte: booking.startDate },
+            endDate: { $lte: booking.endDate }
+          }
+        ]
+      });
+
+      if (conflictingBookings.length > 0) {
+        const conflictDates = conflictingBookings.map(cb => 
+          `${new Date(cb.startDate).toLocaleDateString()} - ${new Date(cb.endDate).toLocaleDateString()}`
+        ).join(', ');
+        
+        return res.status(400).json({ 
+          message: `Cannot approve booking due to date conflicts with existing approved bookings: ${conflictDates}`,
+          conflictingBookings: conflictingBookings.map(cb => ({
+            id: cb._id,
+            startDate: cb.startDate,
+            endDate: cb.endDate,
+            tenant: cb.tenant
+          }))
+        });
+      }
+    }
+
     await booking.save();
 
     // Update property availability if approved
     if (status === 'approved') {
-      await Property.findByIdAndUpdate(booking.property._id, {
-        availabilityStatus: 'Booked',
-        availability: 'Booked'
-      });
-
+      await updatePropertyAvailability(booking.property._id);
       // Note: No automatic transaction creation on booking approval
       // Tenants must manually make monthly payments through the payment form
     }
@@ -244,12 +348,9 @@ export const deleteBooking = async (req, res) => {
     // Delete the booking
     await Booking.findByIdAndDelete(req.params.id);
 
-    // Update property availability if it was booked
+    // Update property availability if it was an approved booking
     if (booking.status === 'approved') {
-      await Property.findByIdAndUpdate(booking.property._id, {
-        availabilityStatus: 'Available',
-        availability: 'Available'
-      });
+      await updatePropertyAvailability(booking.property._id);
     }
 
     res.json({ message: 'Booking deleted successfully', data: { id: req.params.id } });
@@ -281,12 +382,9 @@ export const cancelBooking = async (req, res) => {
     booking.status = 'cancelled';
     await booking.save();
 
-    // Update property availability if it was booked
+    // Update property availability if it was an approved booking
     if (wasApproved) {
-      await Property.findByIdAndUpdate(booking.property, {
-        availabilityStatus: 'Available',
-        availability: 'Available'
-      });
+      await updatePropertyAvailability(booking.property);
     }
 
     // Notify owner that tenant cancelled

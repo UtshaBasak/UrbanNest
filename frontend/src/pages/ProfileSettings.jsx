@@ -44,7 +44,12 @@ const ProfileSettings = () => {
     e.preventDefault();
     try {
       setSaving(true);
-      await updateAuthProfile(editForm);
+      // Ensure admin users maintain their admin role
+      const formData = { ...editForm };
+      if (user?.role === 'admin') {
+        formData.role = 'admin';
+      }
+      await updateAuthProfile(formData);
     } catch (e) {
       console.error(e);
       alert('Failed to save profile');
@@ -91,16 +96,29 @@ const ProfileSettings = () => {
               </div>
               <div>
                 <label className="block text-sm mb-2 text-neutral-700 dark:text-neutral-300">Role</label>
-                <select
-                  value={editForm.role}
-                  onChange={e => setEditForm(p => ({ ...p, role: e.target.value }))}
-                  className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white"
-                  required
-                >
-                  <option value="tenant">Tenant</option>
-                  <option value="owner">Owner</option>
-                </select>
-                <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">Switching role will affect your available features.</p>
+                {user?.role === 'admin' ? (
+                  <div>
+                    <div className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-gray-100 dark:bg-neutral-600 text-neutral-700 dark:text-neutral-300">
+                      Admin
+                    </div>
+                  </div>
+                ) : (
+                  <select
+                    value={editForm.role}
+                    onChange={e => setEditForm(p => ({ ...p, role: e.target.value }))}
+                    className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white"
+                    required
+                  >
+                    <option value="tenant">Tenant</option>
+                    <option value="owner">Owner</option>
+                  </select>
+                )}
+                <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                  {user?.role === 'admin' 
+                    ? 'Admin role cannot be changed.' 
+                    : 'Switching role will affect your available features.'
+                  }
+                </p>
               </div>
               <div>
                 <label className="block text-sm mb-2 text-neutral-700 dark:text-neutral-300">Phone Number</label>
@@ -128,22 +146,24 @@ const ProfileSettings = () => {
                 >
                   <Save className="h-4 w-4 mr-2" /> {saving ? 'Saving...' : 'Save Changes'}
                 </button>
-                <button
-                  onClick={async (e) => {
-                    e.preventDefault();
-                    if (!window.confirm('Are you sure you want to delete your profile? This action can be reversed only by an admin.')) return;
-                    try {
-                      await deleteCurrentUser();
-                      await logout();
-                      navigate('/');
-                    } catch (e) {
-                      alert('Failed to delete account');
-                    }
-                  }}
-                  className="inline-flex px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs"
-                >
-                  Delete Account
-                </button>
+                {user?.role !== 'admin' && (
+                  <button
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      if (!window.confirm('Are you sure you want to delete your profile? This action can be reversed only by an admin.')) return;
+                      try {
+                        await deleteCurrentUser();
+                        await logout();
+                        navigate('/');
+                      } catch (e) {
+                        alert('Failed to delete account');
+                      }
+                    }}
+                    className="inline-flex px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs"
+                  >
+                    Delete Account
+                  </button>
+                )}
               </div>
             </div>
           </form>
