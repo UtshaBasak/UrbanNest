@@ -1,6 +1,21 @@
 import mongoose from 'mongoose';
 
+// Function to generate unique 8-character alphanumeric ID
+const generateUniquePropertyId = () => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < 8; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+};
+
 const propertySchema = new mongoose.Schema({
+  propertyId: {
+    type: String,
+    unique: true,
+    default: generateUniquePropertyId
+  },
   owner: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

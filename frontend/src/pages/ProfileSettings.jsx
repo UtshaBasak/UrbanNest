@@ -103,7 +103,7 @@ const ProfileSettings = () => {
                 <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">Switching role will affect your available features.</p>
               </div>
               <div>
-                <label className="block text-sm mb-2 text-neutral-700 dark:text-neutral-300">Phone</label>
+                <label className="block text-sm mb-2 text-neutral-700 dark:text-neutral-300">Phone Number</label>
                 <input
                   value={editForm.phone}
                   onChange={(e) => setEditForm(p => ({ ...p, phone: e.target.value }))}

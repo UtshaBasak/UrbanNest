@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "migrate:property-ids": "node scripts/assignPropertyIds.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

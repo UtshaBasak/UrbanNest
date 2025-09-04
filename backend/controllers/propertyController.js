@@ -282,6 +282,75 @@ export const getProperty = async (req, res) => {
   }
 };
 
+// @desc Get property by propertyId
+// @route GET /api/properties/property-id/:propertyId
+// @access Public
+export const getPropertyByPropertyId = async (req, res) => {
+  try {
+    const propertyDoc = await Property.findOne({ propertyId: req.params.propertyId })
+      .populate('owner', 'name email phone profileImage');
+
+    if (!propertyDoc) {
+      return res.status(404).json({ message: 'Property not found' });
+    }
+
+    // Compute currentTenant for this property
+    const now = new Date();
+    let activeBooking = await Booking.findOne({
+      property: propertyDoc._id,
+      startDate: { $lte: now },
+      endDate: { $gt: now },
+      status: { $in: ['approved', 'completed'] }
+    }).populate('tenant', 'name');
+
+    // If no active booking, check for approved future booking
+    if (!activeBooking) {
+      activeBooking = await Booking.findOne({
+        property: propertyDoc._id,
+        startDate: { $gt: now },
+        status: 'approved'
+      }).sort({ startDate: 1 }).populate('tenant', 'name');
+    }
+
+    const property = propertyDoc.toObject();
+    if (activeBooking) {
+      property.currentTenant = { id: activeBooking.tenant._id, name: activeBooking.tenant.name };
+    }
+
+    res.json({
+      data: {
+        property
+      }
+    });
+
+  } catch (error) {
+    console.error('Get property by propertyId error:', error);
+    res.status(500).json({ message: 'Server error while fetching property' });
+  }
+};
+
+// Function to generate unique 8-character alphanumeric ID
+const generateUniquePropertyId = async () => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let propertyId;
+  let isUnique = false;
+  
+  while (!isUnique) {
+    propertyId = '';
+    for (let i = 0; i < 8; i++) {
+      propertyId += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    
+    // Check if this ID already exists
+    const existingProperty = await Property.findOne({ propertyId });
+    if (!existingProperty) {
+      isUnique = true;
+    }
+  }
+  
+  return propertyId;
+};
+
 // @desc Create property
 // @route POST /api/properties
 // @access Private (Owner, Admin)
@@ -289,8 +358,12 @@ export const createProperty = async (req, res) => {
   try {
     // Relaxed validation: accept payload as-is; user verification is handled via auth middleware
 
+    // Generate unique property ID
+    const propertyId = await generateUniquePropertyId();
+
     const propertyData = {
       ...req.body,
+      propertyId,
       owner: req.user._id
     };
 

@@ -551,7 +551,7 @@ const UserProfile = () => {
                           </div>
                           <div className="flex items-center justify-between">
                             <div className="text-lg font-semibold text-cyan-600 dark:text-cyan-400">
-                              ${property.price?.toLocaleString()}
+                              	৳{property.price?.toLocaleString()}
                               <span className="text-xs font-normal text-neutral-500 dark:text-neutral-400">/month</span>
                             </div>
                             <span className={`px-2 py-1 text-xs font-medium rounded-full ${

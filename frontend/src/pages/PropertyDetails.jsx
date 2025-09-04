@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { MapPin, Star, Calendar, User, Phone, Mail, ArrowLeft, Heart, Share2, Pencil, Trash } from 'lucide-react';
-import { getProperty, createBooking, getPropertyReviews, deleteProperty, createReview, canReviewProperty, getMyFavourites, addFavourite, removeFavourite } from '../utils/api';
+import { getProperty, createBooking, getPropertyReviews, deleteProperty, createReview, canReviewProperty, getMyFavourites, addFavourite, removeFavourite, getProperties } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 
 const PropertyDetails = () => {
@@ -25,6 +25,8 @@ const PropertyDetails = () => {
   });
   const [bookingLoading, setBookingLoading] = useState(false);
   const [isFavourited, setIsFavourited] = useState(false);
+  const [relatedProperties, setRelatedProperties] = useState([]);
+  const [relatedLoading, setRelatedLoading] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -175,7 +177,13 @@ const PropertyDetails = () => {
     try {
       setLoading(true);
       const response = await getProperty(id);
-      setProperty(response.data.property);
+      const propertyData = response.data.property;
+      setProperty(propertyData);
+      
+      // Fetch related properties after getting property details
+      if (propertyData) {
+        fetchRelatedProperties(propertyData);
+      }
     } catch (error) {
       setError('Failed to fetch property details');
       console.error('Error fetching property:', error);
@@ -190,6 +198,44 @@ const PropertyDetails = () => {
       setReviews(response.data.reviews || []);
     } catch (error) {
       console.error('Error fetching reviews:', error);
+    }
+  };
+
+  const fetchRelatedProperties = async (currentProperty) => {
+    try {
+      setRelatedLoading(true);
+      
+      // Fetch properties with similar location or type
+      const params = {
+        limit: 8,
+        location: currentProperty.location,
+        type: currentProperty.type || currentProperty.propertyType
+      };
+      
+      const response = await getProperties(params);
+      let related = response.data.properties || [];
+      
+      // Filter out the current property
+      related = related.filter(p => p._id !== currentProperty._id);
+      
+      // If we don't have enough related properties, fetch some general properties
+      if (related.length < 4) {
+        const moreParams = {
+          limit: 8
+        };
+        const moreResponse = await getProperties(moreParams);
+        const moreProperties = (moreResponse.data.properties || [])
+          .filter(p => p._id !== currentProperty._id && !related.find(r => r._id === p._id));
+        
+        related = [...related, ...moreProperties].slice(0, 8);
+      }
+      
+      setRelatedProperties(related.slice(0, 8));
+    } catch (error) {
+      console.error('Error fetching related properties:', error);
+      setRelatedProperties([]);
+    } finally {
+      setRelatedLoading(false);
     }
   };
 
@@ -380,6 +426,13 @@ const PropertyDetails = () => {
                     <MapPin className="h-4 w-4 mr-1" />
                     <span>{property.location}</span>
                   </div>
+                  {property.propertyId && (
+                    <div className="flex items-center text-neutral-600 dark:text-neutral-400 mb-2">
+                      <span className="text-sm font-mono bg-neutral-100 dark:bg-neutral-700 px-2 py-1 rounded">
+                        ID: {property.propertyId}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-600 dark:text-neutral-400 mb-2">
                     {property.currentTenant?.name && (
                       <span className="px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-700">Tenant: {property.currentTenant.name}</span>
@@ -416,7 +469,7 @@ const PropertyDetails = () => {
                 </div>
               )}
               <div className="text-3xl font-bold text-cyan-600 dark:text-cyan-400 mb-4">
-                ${property.price?.toLocaleString()}
+                ৳{property.price?.toLocaleString()}
                 <span className="text-lg font-normal text-neutral-500 dark:text-neutral-400">/month</span>
               </div>
               <div className="flex items-center text-sm text-neutral-600 dark:text-neutral-400 mb-4 gap-4">
@@ -603,6 +656,110 @@ const PropertyDetails = () => {
             </div>
           </div>
         </div>
+
+        {/* Related Properties Section */}
+        {relatedProperties.length > 0 && (
+          <div className="mt-12">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 dark:text-neutral-100 mb-4">
+                Related Properties
+              </h2>
+              <p className="text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto">
+                Discover similar properties that might interest you
+              </p>
+            </div>
+
+            {relatedLoading ? (
+              <div className="text-center text-neutral-500 dark:text-neutral-400 text-lg">Loading related properties...</div>
+              ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {relatedProperties.map((property) => (
+                  <Link
+                    key={property._id}
+                    to={`/properties/${property._id}`}
+                    className="card group hover:scale-105 transition-all duration-300"
+                  >
+                    <div className="relative overflow-hidden rounded-t-xl">
+                      <img
+                        src={property.images?.[0] || '/api/placeholder/400/300'}
+                        alt={property.title}
+                        className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
+                      <div className="absolute top-4 left-4">
+                        {(() => {
+                          const status = property.availabilityStatus || property.availability || 'Available';
+                          const cls = `status-${String(status).toLowerCase().split(' ').join('-')}`;
+                          return (
+                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${cls}`}>
+                              {status}
+                            </span>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                    <div className="p-6">
+                      <div className="flex items-start justify-between mb-3">
+                        <h3 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                          {property.title}
+                        </h3>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">
+                            ৳{property.price}
+                          </div>
+                          <div className="text-sm text-neutral-500">/month</div>
+                        </div>
+                      </div>
+                      {(() => {
+                        // Always show rating, even if not rated yet
+                        const rating = typeof property.averageRating === 'number'
+                          ? property.averageRating
+                          : (typeof property.rating === 'number' ? property.rating : 0);
+                        const count = property.totalReviews || 0;
+                        return (
+                          <div className="flex items-center gap-1 text-sm text-yellow-500 mb-2">
+                            <Star className="w-4 h-4 fill-current" />
+                            <span>
+                              {Number(rating).toFixed(1)}
+                              {` (${count} review${count !== 1 ? 's' : ''})`}
+                            </span>
+                          </div>
+                        );
+                      })()}
+                      <div className="flex items-center text-neutral-600 dark:text-neutral-400 mb-2">
+                        <MapPin className="w-4 h-4 mr-2" />
+                        <span className="text-sm truncate">{property.location}</span>
+                      </div>
+                      {property.propertyId && (
+                        <div className="flex items-center text-neutral-600 dark:text-neutral-400 mb-2">
+                          <span className="text-xs font-mono bg-neutral-100 dark:bg-neutral-700 px-2 py-1 rounded">
+                            ID: {property.propertyId}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-600 dark:text-neutral-400 mb-3">
+                        {property.owner?.name && (
+                          <span className="px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-700">Owned by {property.owner.name}</span>
+                        )}
+                        {property.currentTenant?.name && (
+                          <span className="px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-700">Tenant: {property.currentTenant.name}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between text-sm text-neutral-600 dark:text-neutral-400">
+                        <span>
+                          {typeof property.bedrooms === 'number' ? `${property.bedrooms} bed` : ''}
+                          {typeof property.bathrooms === 'number' ? `${typeof property.bedrooms === 'number' ? ' • ' : ''}${property.bathrooms} bath` : ''}
+                        </span>
+                        <span>
+                          {typeof property.size === 'number' ? `${property.size} sqft` : ''}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Booking Modal */}

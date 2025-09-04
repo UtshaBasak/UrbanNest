@@ -314,31 +314,32 @@ const Properties = () => {
                   </div>
                   {/* Rating row (match Home featured style) */}
                   {(() => {
-                    // Check both averageRating and rating properties
-                    const rating = typeof property.averageRating === 'number' 
-                      ? property.averageRating 
-                      : (typeof property.rating === 'number' ? property.rating : null);
-                    
+                    // Always show rating, even if not rated yet
+                    const rating = typeof property.averageRating === 'number'
+                      ? property.averageRating
+                      : (typeof property.rating === 'number' ? property.rating : 0);
                     const count = property.totalReviews || 0;
-                    
-                    // Show rating if it exists and is greater than 0
-                    if (rating && rating > 0) {
-                      return (
-                        <div className="flex items-center gap-1 text-sm text-yellow-500 mb-2">
-                          <Star className="w-4 h-4 fill-current" />
-                          <span>
-                            {Number(rating).toFixed(1)}
-                            {count > 0 ? ` (${count} review${count !== 1 ? 's' : ''})` : ''}
-                          </span>
-                        </div>
-                      );
-                    }
-                    return null;
+                    return (
+                      <div className="flex items-center gap-1 text-sm text-yellow-500 mb-2">
+                        <Star className="w-4 h-4 fill-current" />
+                        <span>
+                          {Number(rating).toFixed(1)}
+                          {` (${count} review${count !== 1 ? 's' : ''})`}
+                        </span>
+                      </div>
+                    );
                   })()}
                   <div className="flex items-center text-neutral-600 dark:text-neutral-400 mb-2">
                     <MapPin className="h-4 w-4 mr-1" />
                     <span className="text-sm line-clamp-1">{property.location}</span>
                   </div>
+                  {property.propertyId && (
+                    <div className="flex items-center text-neutral-600 dark:text-neutral-400 mb-2">
+                      <span className="text-xs font-mono bg-neutral-100 dark:bg-neutral-700 px-2 py-1 rounded">
+                        ID: {property.propertyId}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-600 dark:text-neutral-400 mb-3">
                     {property.owner?.name && (
                       <span className="px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-700">Owned by {property.owner.name}</span>
@@ -363,7 +364,7 @@ const Properties = () => {
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">
-                      ${property.price?.toLocaleString()}
+                      	৳{property.price?.toLocaleString()}
                       <span className="text-sm font-normal text-neutral-500 dark:text-neutral-400">/month</span>
                     </div>
                   </div>

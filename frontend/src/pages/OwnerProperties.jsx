@@ -59,6 +59,13 @@ const OwnerProperties = () => {
                     <MapPin className="h-4 w-4 mr-1" />
                     <span className="text-sm line-clamp-1">{property.location}</span>
                   </div>
+                  {property.propertyId && (
+                    <div className="flex items-center text-neutral-600 dark:text-neutral-400 mb-2">
+                      <span className="text-xs font-mono bg-neutral-100 dark:bg-neutral-700 px-2 py-1 rounded">
+                        ID: {property.propertyId}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-600 dark:text-neutral-400 mb-3">
                     {property.owner?.name && (
                       <span className="px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-700">Owned by {property.owner.name}</span>

@@ -277,7 +277,7 @@ const Dashboard = () => {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
-                    Properties
+                    My Properties
                   </p>
                   <p className="text-2xl font-bold text-neutral-900 dark:text-white">
                     {stats.totalProperties}
@@ -294,7 +294,7 @@ const Dashboard = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
-                  Bookings
+                  My Bookings
                 </p>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-white">
                   {stats.totalBookings}

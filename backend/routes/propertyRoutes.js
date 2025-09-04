@@ -3,6 +3,7 @@ import { body } from 'express-validator';
 import {
   getProperties,
   getProperty,
+  getPropertyByPropertyId,
   createProperty,
   updateProperty,
   deleteProperty,
@@ -41,6 +42,7 @@ const propertyValidation = [
 router.get('/', getProperties);
 router.get('/top-rated', getTopRatedProperties);
 router.get('/owner/:ownerId', getPropertiesByOwner);
+router.get('/property-id/:propertyId', getPropertyByPropertyId);
 router.get('/:id', getProperty);
 
 router.post('/', 

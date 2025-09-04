@@ -86,7 +86,7 @@ const SearchDropdown = ({ query, onClose }) => {
                       {property.location}
                     </p>
                     <p className="text-sm font-semibold text-primary-600 dark:text-primary-400">
-                      ${property.price}/month
+                      	৳{property.price}/month
                     </p>
                   </div>
                 </Link>
