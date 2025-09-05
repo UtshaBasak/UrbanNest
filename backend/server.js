@@ -49,7 +49,7 @@ const allowedOrigins = [
   'http://127.0.0.1:5173',
   'http://localhost:3000',
   'http://127.0.0.1:3000',
-  'https://urbannest-f2tp.onrender.com'
+  'https://urbannest-frontend-bt7n.onrender.com'
 ].filter(Boolean);
 
 app.use(cors({
