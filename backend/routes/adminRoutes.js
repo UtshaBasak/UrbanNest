@@ -5,7 +5,9 @@ import {
   getProperties,
   deleteUserById,
   deletePropertyById,
-  getAdminStats
+  getAdminStats,
+  getAllReviews,
+  deleteReviewById
 } from '../controllers/adminController.js';
 import { authenticateToken, authorize } from '../middleware/auth.js';
 
@@ -29,5 +31,9 @@ router.delete('/properties/:id', deletePropertyById);
 
 // User management
 router.delete('/users/:id', deleteUserById);
+
+// Review management
+router.get('/reviews', getAllReviews);
+router.delete('/reviews/:id', deleteReviewById);
 
 export default router;

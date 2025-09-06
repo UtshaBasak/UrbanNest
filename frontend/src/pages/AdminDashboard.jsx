@@ -20,7 +20,9 @@ import {
   getTenants, 
   getAdminProperties,
   deleteUserById,
-  deletePropertyById 
+  deletePropertyById,
+  getAdminReviews,
+  deleteReviewById
 } from '../utils/api';
 
 // SearchBar component defined outside to prevent re-creation on each render
@@ -64,12 +66,14 @@ const AdminDashboard = () => {
   const [data, setData] = useState({
     owners: [],
     tenants: [],
-    properties: []
+    properties: [],
+    reviews: []
   });
   const [searchTerms, setSearchTerms] = useState({
     owners: '',
     tenants: '',
-    properties: ''
+    properties: '',
+    reviews: ''
   });
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -89,18 +93,20 @@ const AdminDashboard = () => {
   const fetchAdminData = async () => {
     try {
       setLoading(true);
-      const [statsRes, ownersRes, tenantsRes, propertiesRes] = await Promise.allSettled([
+      const [statsRes, ownersRes, tenantsRes, propertiesRes, reviewsRes] = await Promise.allSettled([
         getAdminStats(),
         getOwners(),
         getTenants(),
-        getAdminProperties()
+        getAdminProperties(),
+        getAdminReviews()
       ]);
 
       setStats(statsRes.status === 'fulfilled' ? statsRes.value.data.stats : {});
       setData({
         owners: ownersRes.status === 'fulfilled' ? ownersRes.value.data.owners : [],
         tenants: tenantsRes.status === 'fulfilled' ? tenantsRes.value.data.tenants : [],
-        properties: propertiesRes.status === 'fulfilled' ? propertiesRes.value.data.properties : []
+        properties: propertiesRes.status === 'fulfilled' ? propertiesRes.value.data.properties : [],
+        reviews: reviewsRes.status === 'fulfilled' ? reviewsRes.value.data.reviews : []
       });
     } catch (error) {
       console.error('Error fetching admin data:', error);
@@ -135,6 +141,19 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleDeleteReview = async (reviewId, reviewType) => {
+    if (window.confirm('Are you sure you want to delete this review? This action cannot be undone.')) {
+      try {
+        await deleteReviewById(reviewId, reviewType);
+        setRefreshKey(prev => prev + 1);
+        alert('Review deleted successfully');
+      } catch (error) {
+        console.error('Error deleting review:', error);
+        alert('Failed to delete review: ' + (error.message || 'Unknown error'));
+      }
+    }
+  };
+
   const handleSearch = async (searchType) => {
     try {
       const searchTerm = searchTerms[searchType];
@@ -152,6 +171,10 @@ const AdminDashboard = () => {
         case 'properties':
           result = await getAdminProperties({ search: searchTerm });
           setData(prev => ({ ...prev, properties: result.data.properties }));
+          break;
+        case 'reviews':
+          result = await getAdminReviews({ search: searchTerm });
+          setData(prev => ({ ...prev, reviews: result.data.reviews }));
           break;
       }
     } catch (error) {
@@ -239,7 +262,8 @@ const AdminDashboard = () => {
               { id: 'overview', label: 'Overview', icon: BarChart3 },
               { id: 'owners', label: 'Owner Information', icon: UserCheck },
               { id: 'tenants', label: 'Tenant Information', icon: UserX },
-              { id: 'properties', label: 'Property Information', icon: Building2 }
+              { id: 'properties', label: 'Property Information', icon: Building2 },
+              { id: 'reviews', label: 'Reviews', icon: Star }
             ].map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
@@ -437,7 +461,7 @@ const AdminDashboard = () => {
         {activeTab === 'properties' && (
           <div>
             <SearchBar
-              placeholder="Search properties by title, description, or location..."
+              placeholder="Search properties by title, description, type, status or location..."
               value={searchTerms.properties}
               onChange={(value) => updateSearchTerm('properties', value)}
               onSearch={() => handleSearch('properties')}
@@ -523,6 +547,120 @@ const AdminDashboard = () => {
                   </table>
                 </div>
               </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Reviews Tab */}
+        {activeTab === 'reviews' && (
+          <div>
+            <SearchBar
+              placeholder="Search reviews by reviewer email, target email, property name or comment..."
+              value={searchTerms.reviews}
+              onChange={(value) => updateSearchTerm('reviews', value)}
+              onSearch={() => handleSearch('reviews')}
+            />
+            <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">All Reviews</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Manage property reviews and user ratings
+                </p>
+              </div>
+              
+              {/* Fixed height container with sticky scrollbar */}
+              <div className="relative">
+                <div className="overflow-x-auto admin-table-scroll max-h-[70vh]" style={{ paddingBottom: '20px' }}>
+                  <div className="min-w-[1400px]">
+                    <table className="w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" style={{ minWidth: '150px' }}>
+                        Type
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" style={{ minWidth: '200px' }}>
+                        Reviewer
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" style={{ minWidth: '200px' }}>
+                        Target
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" style={{ minWidth: '100px' }}>
+                        Rating
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" style={{ minWidth: '300px' }}>
+                        Comment
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" style={{ minWidth: '120px' }}>
+                        Date
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" style={{ minWidth: '100px' }}>
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {data.reviews.map((review) => (
+                      <tr key={`${review.type}-${review._id}`}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            review.type === 'property' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
+                            review.targetType === 'Owner' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                            'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+                          }`}>
+                            {review.type === 'property' ? 'Property' : `${review.targetType} Rating`}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                          <div>
+                            <div className="font-medium">{review.reviewer?.name || 'Unknown'}</div>
+                            <div className="text-gray-500 dark:text-gray-400">{review.reviewer?.email}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                          <div>
+                            {review.type === 'property' ? (
+                              <>
+                                <div className="font-medium">{review.target?.title || 'Unknown Property'}</div>
+                                <div className="text-gray-500 dark:text-gray-400">{review.target?.location}</div>
+                              </>
+                            ) : (
+                              <>
+                                <div className="font-medium">{review.target?.name || 'Unknown User'}</div>
+                                <div className="text-gray-500 dark:text-gray-400">{review.target?.email}</div>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                          <div className="flex items-center">
+                            <Star className="h-4 w-4 text-yellow-400 mr-1" />
+                            <span>{review.rating}/5</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-white max-w-xs">
+                          <div className="truncate" title={review.comment}>
+                            {review.comment || 'No comment'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                          {new Date(review.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button
+                            onClick={() => handleDeleteReview(review._id, review.type)}
+                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                            title="Delete Review"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

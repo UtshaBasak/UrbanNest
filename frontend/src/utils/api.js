@@ -534,3 +534,28 @@ export const deletePropertyById = async (id) => {
   });
   return handleResponse(response);
 };
+
+export const getAdminReviews = async (params = {}) => {
+  const searchParams = new URLSearchParams();
+  Object.keys(params).forEach(key => {
+    if (params[key] !== undefined && params[key] !== '') {
+      searchParams.append(key, params[key]);
+    }
+  });
+  const response = await fetch(`${API_BASE_URL}/admin/reviews?${searchParams}`, {
+    credentials: 'include',
+  });
+  return handleResponse(response);
+};
+
+export const deleteReviewById = async (id, type = '') => {
+  const searchParams = new URLSearchParams();
+  if (type) {
+    searchParams.append('type', type);
+  }
+  const response = await fetch(`${API_BASE_URL}/admin/reviews/${id}?${searchParams}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+  return handleResponse(response);
+};

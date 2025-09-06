@@ -312,15 +312,19 @@ export const getAdminStats = async (req, res) => {
       totalTenants,
       totalProperties,
       totalBookings,
-      totalReviews
+      propertyReviews,
+      userRatings
     ] = await Promise.all([
       User.countDocuments({ isActive: true, role: { $ne: 'admin' } }),
       User.countDocuments({ role: 'owner', isActive: true }),
       User.countDocuments({ role: 'tenant', isActive: true }),
       Property.countDocuments({ isActive: true }),
-      mongoose.model('Booking').countDocuments(),
-      mongoose.model('Review').countDocuments()
+      mongoose.model('Booking').countDocuments({ status: 'approved' }),
+      mongoose.model('Review').countDocuments(),
+      mongoose.model('UserRating').countDocuments()
     ]);
+
+    const totalReviews = propertyReviews + userRatings;
 
     res.json({
       data: {
@@ -338,5 +342,162 @@ export const getAdminStats = async (req, res) => {
   } catch (error) {
     console.error('Get admin stats error:', error);
     res.status(500).json({ message: 'Server error while fetching admin statistics' });
+  }
+};
+
+// @desc Get all reviews (property reviews and user ratings)
+// @route GET /api/admin/reviews
+// @access Private (Admin only)
+export const getAllReviews = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, search = '' } = req.query;
+    const skip = (page - 1) * limit;
+
+
+    // Build search query for property reviews
+    const searchQuery = search.trim();
+    let propertyReviewQuery = {};
+    let userRatingQuery = {};
+
+    // For property reviews, search by comment, reviewer email, or property title
+    if (searchQuery) {
+      const searchRegex = { $regex: searchQuery, $options: 'i' };
+      propertyReviewQuery = {
+        $or: [
+          { comment: searchRegex },
+        ]
+      };
+      userRatingQuery = {
+        $or: [
+          { comment: searchRegex },
+        ]
+      };
+    }
+
+    // Get property reviews and filter by reviewer email or property title if needed
+    let propertyReviews = await mongoose.model('Review').find(propertyReviewQuery)
+      .populate('tenant', 'name email')
+      .populate('property', 'title location')
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip(skip)
+      .lean();
+
+    if (searchQuery) {
+      propertyReviews = propertyReviews.filter(r =>
+        (r.tenant?.email && r.tenant.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (r.property?.title && r.property.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (r.comment && r.comment.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+    }
+
+    // Get user ratings and filter by reviewer/target email if needed
+    let userRatings = await mongoose.model('UserRating').find(userRatingQuery)
+      .populate('ratee', 'name email')
+      .populate('rater', 'name email')
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip(skip)
+      .lean();
+
+    if (searchQuery) {
+      userRatings = userRatings.filter(r =>
+        (r.rater?.email && r.rater.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (r.ratee?.email && r.ratee.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (r.comment && r.comment.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+    }
+
+    // Combine and format all reviews
+    const allReviews = [
+      ...propertyReviews.map(review => ({
+        _id: review._id,
+        type: 'property',
+        rating: review.rating,
+        comment: review.comment,
+        createdAt: review.createdAt,
+        reviewer: review.tenant,
+        target: review.property,
+        targetType: 'Property'
+      })),
+      ...userRatings.map(rating => ({
+        _id: rating._id,
+        type: 'user',
+        rating: rating.rating,
+        comment: rating.comment,
+        createdAt: rating.createdAt,
+        context: rating.context,
+        reviewer: rating.rater,
+        target: rating.ratee,
+        targetType: rating.context === 'owner' ? 'Owner' : 'Tenant'
+      }))
+    ];
+
+    // Sort combined results by date
+    allReviews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    // Apply pagination to combined results
+    const paginatedReviews = allReviews.slice(0, limit);
+
+    // Get total counts for pagination
+    const [totalPropertyReviews, totalUserRatings] = await Promise.all([
+      mongoose.model('Review').countDocuments(propertyReviewQuery),
+      mongoose.model('UserRating').countDocuments(userRatingQuery)
+    ]);
+
+    const total = totalPropertyReviews + totalUserRatings;
+
+    res.json({
+      data: {
+        reviews: paginatedReviews,
+        pagination: {
+          total,
+          page: Number(page),
+          pages: Math.ceil(total / limit),
+          limit: Number(limit)
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Get all reviews error:', error);
+    res.status(500).json({ message: 'Server error while fetching reviews' });
+  }
+};
+
+// @desc Delete review (property review or user rating)
+// @route DELETE /api/admin/reviews/:id
+// @access Private (Admin only)
+export const deleteReviewById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { type } = req.query; // 'property' or 'user'
+
+    let deletedReview;
+
+    if (type === 'property') {
+      deletedReview = await mongoose.model('Review').findByIdAndDelete(id);
+    } else if (type === 'user') {
+      deletedReview = await mongoose.model('UserRating').findByIdAndDelete(id);
+    } else {
+      // Try to find in both collections if type not specified
+      deletedReview = await mongoose.model('Review').findByIdAndDelete(id);
+      if (!deletedReview) {
+        deletedReview = await mongoose.model('UserRating').findByIdAndDelete(id);
+      }
+    }
+
+    if (!deletedReview) {
+      return res.status(404).json({ message: 'Review not found' });
+    }
+
+    res.json({
+      message: 'Review deleted successfully',
+      data: { id }
+    });
+
+  } catch (error) {
+    console.error('Delete review error:', error);
+    res.status(500).json({ message: 'Server error while deleting review' });
   }
 };

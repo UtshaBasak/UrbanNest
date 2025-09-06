@@ -88,9 +88,11 @@ const Dashboard = () => {
         promises.push(getPropertiesByOwner(user._id || user.id));
         promises.push(getMyBookings());
         promises.push(getMyPropertiesReviews()); // Get reviews for owner's properties
+        promises.push(getMyBookings({ status: 'approved' })); // Get only approved bookings for count
       } else {
         promises.push(getMyBookings());
         promises.push(getMyReviews()); // Get reviews written by tenant
+        promises.push(getMyBookings({ status: 'approved' })); // Get only approved bookings for count
       }
 
       const results = await Promise.allSettled(promises);
@@ -98,14 +100,17 @@ const Dashboard = () => {
       let properties = [];
       let bookings = [];
       let reviews = [];
+      let approvedBookings = [];
 
       if (user.role === 'owner') {
         properties = results[0].status === 'fulfilled' ? results[0].value.data.properties || [] : [];
         bookings = results[1].status === 'fulfilled' ? results[1].value.data.bookings || [] : [];
         reviews = results[2].status === 'fulfilled' ? results[2].value.data.reviews || [] : [];
+        approvedBookings = results[3].status === 'fulfilled' ? results[3].value.data.bookings || [] : [];
       } else {
         bookings = results[0].status === 'fulfilled' ? results[0].value.data.bookings || [] : [];
         reviews = results[1].status === 'fulfilled' ? results[1].value.data.reviews || [] : [];
+        approvedBookings = results[2].status === 'fulfilled' ? results[2].value.data.bookings || [] : [];
       }
 
       setData({ properties, bookings, reviews });
@@ -113,7 +118,7 @@ const Dashboard = () => {
       // Calculate stats
       setStats({
         totalProperties: properties.length,
-        totalBookings: bookings.length,
+        totalBookings: approvedBookings.length, // Only count approved bookings
         totalReviews: reviews.length
       });
 
