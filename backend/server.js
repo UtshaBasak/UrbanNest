@@ -21,8 +21,8 @@ import adminRoutes from './routes/adminRoutes.js';
 // Import config
 import connectDB from './config/db.js';
 
-// Load environment variables
-dotenv.config();
+// Load environment variables from root directory
+dotenv.config({ path: '../.env' });
 
 // Connect to database
 connectDB();
