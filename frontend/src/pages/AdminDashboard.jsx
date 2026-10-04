@@ -527,7 +527,7 @@ const AdminDashboard = () => {
               {/* Fixed height container with sticky scrollbar */}
               <div className="relative">
                 <div className="overflow-x-auto admin-table-scroll max-h-[70vh]" style={{ paddingBottom: '20px' }}>
-                  <div className="min-w-[1200px]">
+                  <div className="min-w-300">
                     <table className="w-full divide-y divide-gray-200 dark:divide-gray-700">
                   <thead className="bg-gray-50 dark:bg-gray-700">
                     <tr>
@@ -625,7 +625,7 @@ const AdminDashboard = () => {
               {/* Fixed height container with sticky scrollbar */}
               <div className="relative">
                 <div className="overflow-x-auto admin-table-scroll max-h-[70vh]" style={{ paddingBottom: '20px' }}>
-                  <div className="min-w-[1400px]">
+                  <div className="min-w-350">
                     <table className="w-full divide-y divide-gray-200 dark:divide-gray-700">
                   <thead className="bg-gray-50 dark:bg-gray-700">
                     <tr>
