@@ -8,14 +8,16 @@ import {
   deleteBooking
 } from '../controllers/bookingController.js';
 import { authenticateToken, authorize } from '../middleware/auth.js';
+import { registerObjectIdParams } from '../utils/request.js';
 
 const router = express.Router();
 
-// Validation rules (relaxed for create booking)
+registerObjectIdParams(router, ['id']);
 
+// Validation rules
 const statusUpdateValidation = [
   body('status').isIn(['approved', 'rejected']).withMessage('Invalid status'),
-  body('rejectionReason').optional().isLength({ max: 500 }).withMessage('Rejection reason too long')
+  body('rejectionReason').optional().isString().isLength({ max: 500 }).withMessage('Rejection reason too long')
 ];
 
 // Routes

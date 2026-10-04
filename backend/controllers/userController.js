@@ -1,3 +1,4 @@
+import { validationResult } from 'express-validator';
 import mongoose from 'mongoose';
 import User from '../models/User.js';
 import Property from '../models/Property.js';
@@ -5,40 +6,73 @@ import Booking from '../models/Booking.js';
 import Review from '../models/Review.js';
 import UserRating from '../models/UserRating.js';
 import { deleteUserCascade } from '../utils/cascadeDelete.js';
+import { runInTransaction } from '../utils/transaction.js';
+import { toSearchRegex, parsePagination, buildPagination, handleKnownDbError } from '../utils/request.js';
+
+// Fields anyone may see in the public directory and on profiles
+const PUBLIC_USER_FIELDS = 'name email role profileImage createdAt';
+
+const isSameUser = (user, id) => !!user && String(user._id) === String(id);
+
+// Owners with a completed booking from this tenant may see the tenant's phone
+const ownerHasCompletedBookingWith = async (ownerId, tenantId) => {
+  const propertyIds = await Property.find({ owner: ownerId }).distinct('_id');
+  if (!propertyIds.length) return false;
+  return !!(await Booking.exists({ tenant: tenantId, status: 'completed', property: { $in: propertyIds } }));
+};
+
+// Phone numbers are private: visible to the user, admins, anyone for owners
+// (it is their business contact), and owners who completed a booking with a tenant
+const canSeePhone = async (viewer, target) => {
+  if (!viewer) return target.role === 'owner';
+  if (isSameUser(viewer, target._id) || viewer.role === 'admin' || target.role === 'owner') return true;
+  if (target.role === 'tenant' && viewer.role === 'owner') {
+    return ownerHasCompletedBookingWith(viewer._id, target._id);
+  }
+  return false;
+};
 
 // @desc Update user profile (self or admin)
 // @route PUT /api/users/:id
 // @access Private (Self or Admin)
 export const updateUserProfile = async (req, res) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: 'Validation failed', errors: errors.array() });
+    }
+
     const targetId = req.params.id;
-    const isSelf = req.user && (req.user.id === targetId || String(req.user._id) === String(targetId));
-    const isAdmin = req.user && req.user.role === 'admin';
+    const isSelf = isSameUser(req.user, targetId);
+    const isAdmin = req.user.role === 'admin';
     if (!isSelf && !isAdmin) {
       return res.status(403).json({ message: 'Forbidden' });
     }
 
-    const allowedFields = ['name', 'phone', 'profileImage', 'role'];
+    const target = await User.findById(targetId);
+    if (!target) return res.status(404).json({ message: 'User not found' });
+
     const updates = {};
-    for (const field of allowedFields) {
+    for (const field of ['name', 'phone', 'profileImage', 'role']) {
       if (req.body[field] !== undefined) updates[field] = req.body[field];
     }
 
-    // Only allow role change to 'tenant', 'owner', or preserve existing 'admin'
-    if (updates.role && !['tenant', 'owner', 'admin'].includes(updates.role)) {
-      return res.status(400).json({ message: 'Invalid role' });
-    }
-    
-    // Prevent non-admin users from setting admin role
-    if (updates.role === 'admin' && !isAdmin) {
-      return res.status(403).json({ message: 'Cannot set admin role' });
+    if (updates.role !== undefined && updates.role !== target.role) {
+      // Admin accounts are managed through scripts/createAdmin.js only
+      if (updates.role === 'admin' || target.role === 'admin') {
+        return res.status(403).json({ message: 'Admin roles cannot be changed here' });
+      }
+      // An owner with live listings must remove them before becoming a tenant
+      if (target.role === 'owner' && await Property.exists({ owner: target._id, isActive: true })) {
+        return res.status(409).json({ message: 'Remove your active property listings before switching to a tenant account' });
+      }
     }
 
-    const user = await User.findByIdAndUpdate(targetId, updates, { new: true, runValidators: true }).select('-password');
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    const user = await User.findByIdAndUpdate(targetId, updates, { returnDocument: 'after', runValidators: true }).select('-password');
 
     res.json({ message: 'Profile updated successfully', data: { user } });
   } catch (error) {
+    if (handleKnownDbError(res, error)) return;
     console.error('Update user profile error:', error);
     res.status(500).json({ message: 'Server error while updating profile' });
   }
@@ -49,23 +83,28 @@ export const updateUserProfile = async (req, res) => {
 // @access Public
 export const getUsers = async (req, res) => {
   try {
-    const { role, page = 1, limit = 20, search } = req.query;
-    const query = { isActive: true };
+    const { role, search } = req.query;
+    const { page, limit, skip } = parsePagination(req.query);
+    // The public directory lists owners and tenants only
+    const query = { isActive: true, role: { $in: ['owner', 'tenant'] } };
 
-    if (role) query.role = role;
+    if (role !== undefined) {
+      if (!['owner', 'tenant'].includes(role)) {
+        return res.status(400).json({ message: 'role must be owner or tenant' });
+      }
+      query.role = role;
+    }
 
-    if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } }
-      ];
+    const searchRegex = toSearchRegex(search);
+    if (searchRegex) {
+      query.$or = [{ name: searchRegex }, { email: searchRegex }];
     }
 
     const users = await User.find(query)
-      .select('-password -favourites')
+      .select(PUBLIC_USER_FIELDS)
       .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
+      .limit(limit)
+      .skip(skip);
 
     const total = await User.countDocuments(query);
 
@@ -103,12 +142,7 @@ export const getUsers = async (req, res) => {
     res.json({
       data: {
         users: usersWithRatings,
-        pagination: {
-          total,
-          page: Number(page),
-          pages: Math.ceil(total / limit),
-          limit: Number(limit)
-        }
+        pagination: buildPagination(total, page, limit)
       }
     });
 
@@ -166,6 +200,16 @@ export const addFavourite = async (req, res) => {
     if (!itemId || !itemType || !['owner', 'property'].includes(itemType)) {
       return res.status(400).json({ message: 'itemId and valid itemType are required' });
     }
+    if (!mongoose.isValidObjectId(itemId)) {
+      return res.status(400).json({ message: 'Invalid itemId' });
+    }
+
+    const itemExists = itemType === 'owner'
+      ? await User.exists({ _id: itemId, role: 'owner', isActive: true })
+      : await Property.exists({ _id: itemId, isActive: true });
+    if (!itemExists) {
+      return res.status(404).json({ message: `${itemType === 'owner' ? 'Owner' : 'Property'} not found` });
+    }
 
     const user = await User.findById(req.user._id).select('favourites');
     if (!user) return res.status(404).json({ message: 'User not found' });
@@ -178,6 +222,7 @@ export const addFavourite = async (req, res) => {
 
     res.status(201).json({ message: 'Added to favourites', data: { favourites: user.favourites } });
   } catch (error) {
+    if (handleKnownDbError(res, error)) return;
     console.error('addFavourite error:', error);
     res.status(500).json({ message: 'Server error while adding favourite' });
   }
@@ -211,14 +256,14 @@ export const removeFavourite = async (req, res) => {
   }
 };
 
-// @desc Delete a user (self or admin). If owner, cascade delete related data
+// @desc Delete a user (self or admin) and all of their related data
 // @route DELETE /api/users/:id
 // @access Private (Self or Admin)
 export const deleteUser = async (req, res) => {
   try {
     const targetId = req.params.id;
-    const isSelf = req.user && (req.user.id === targetId || String(req.user._id) === String(targetId));
-    const isAdmin = req.user && req.user.role === 'admin';
+    const isSelf = isSameUser(req.user, targetId);
+    const isAdmin = req.user.role === 'admin';
     if (!isSelf && !isAdmin) {
       return res.status(403).json({ message: 'Forbidden' });
     }
@@ -226,12 +271,12 @@ export const deleteUser = async (req, res) => {
     const user = await User.findById(targetId);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    const session = await mongoose.startSession();
-    try {
-      await session.withTransaction(() => deleteUserCascade(user, session));
-    } finally {
-      session.endSession();
+    // Admin accounts cannot be removed through the API (self-deletion would lock the platform out)
+    if (user.role === 'admin') {
+      return res.status(403).json({ message: 'Admin accounts cannot be deleted' });
     }
+
+    await runInTransaction((session) => deleteUserCascade(user, session));
 
     res.json({ message: 'User and related data deleted successfully', data: { id: targetId } });
   } catch (error) {
@@ -240,23 +285,29 @@ export const deleteUser = async (req, res) => {
   }
 };
 
-// @desc Get single user
+// @desc Get single user profile
 // @route GET /api/users/:id
-// @access Public
+// @access Public (phone number only for permitted viewers)
 export const getUser = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select('-password -favourites');
+    const user = await User.findById(req.params.id).select(`${PUBLIC_USER_FIELDS} phone isActive`);
 
     if (!user || !user.isActive) {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    const userData = user.toObject();
+    delete userData.isActive;
+    if (!(await canSeePhone(req.user, user))) {
+      delete userData.phone;
+    }
+
     // Get user's properties if they are an owner
     let properties = [];
     if (user.role === 'owner') {
-      properties = await Property.find({ 
-        owner: user._id, 
-        isActive: true 
+      properties = await Property.find({
+        owner: user._id,
+        isActive: true
       }).sort({ createdAt: -1 }).limit(6);
     }
 
@@ -283,7 +334,7 @@ export const getUser = async (req, res) => {
 
     res.json({
       data: {
-        user,
+        user: userData,
         properties,
         ratingSummary: summary,
         tenantActivity
@@ -296,26 +347,30 @@ export const getUser = async (req, res) => {
   }
 };
 
-// @desc Search users
+// @desc Search owners and tenants by name or email
 // @route GET /api/users/search
 // @access Public
 export const searchUsers = async (req, res) => {
   try {
     const { q, role } = req.query;
 
-    if (!q || q.length < 2) {
+    const searchRegex = typeof q === 'string' && q.trim().length >= 2 ? toSearchRegex(q) : null;
+    if (!searchRegex) {
       return res.json({ data: { users: [] } });
     }
 
     const query = {
       isActive: true,
-      $or: [
-        { name: { $regex: q, $options: 'i' } },
-        { email: { $regex: q, $options: 'i' } }
-      ]
+      role: { $in: ['owner', 'tenant'] },
+      $or: [{ name: searchRegex }, { email: searchRegex }]
     };
 
-    if (role) query.role = role;
+    if (role !== undefined) {
+      if (!['owner', 'tenant'].includes(role)) {
+        return res.status(400).json({ message: 'role must be owner or tenant' });
+      }
+      query.role = role;
+    }
 
     const users = await User.find(query)
       .select('name email role profileImage')
@@ -334,29 +389,10 @@ export const searchUsers = async (req, res) => {
 // @access Private
 export const canViewTenantContact = async (req, res) => {
   try {
-    const targetUserId = req.params.id;
-    const requester = req.user;
-    if (!requester) return res.status(401).json({ message: 'Unauthorized' });
+    const target = await User.findById(req.params.id).select('_id role');
+    if (!target) return res.status(404).json({ message: 'User not found' });
 
-    const tenant = await User.findById(targetUserId).select('_id role');
-    if (!tenant) return res.status(404).json({ message: 'User not found' });
-
-    // Self always allowed
-    if (String(requester._id) === String(targetUserId)) {
-      return res.json({ data: { canView: true } });
-    }
-
-    // Only owners can view tenant contact, and only if tenant completed a booking on owner's property
-    if (tenant.role !== 'tenant' || requester.role !== 'owner') {
-      return res.json({ data: { canView: false } });
-    }
-
-    const match = await Booking.findOne({
-      tenant: tenant._id,
-      status: 'completed',
-    }).populate({ path: 'property', select: 'owner', match: { owner: requester._id } });
-
-    const canView = !!(match && match.property);
+    const canView = await canSeePhone(req.user, target);
     return res.json({ data: { canView } });
   } catch (error) {
     console.error('canViewTenantContact error:', error);
@@ -369,15 +405,24 @@ export const canViewTenantContact = async (req, res) => {
 // @access Private (Admin)
 export const updateUserStatus = async (req, res) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: 'Validation failed', errors: errors.array() });
+    }
+
     const { isActive } = req.body;
-    const user = await User.findById(req.params.id);
+    const user = await User.findById(req.params.id).select('name email role isActive');
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    user.isActive = isActive;
-    await user.save();
+    if (user.role === 'admin') {
+      return res.status(403).json({ message: 'Admin accounts cannot be deactivated' });
+    }
+
+    // Update only the flag so legacy documents with outdated fields still save
+    await User.updateOne({ _id: user._id }, { $set: { isActive } });
 
     res.json({
       message: `User ${isActive ? 'activated' : 'deactivated'} successfully`,
@@ -387,7 +432,7 @@ export const updateUserStatus = async (req, res) => {
           name: user.name,
           email: user.email,
           role: user.role,
-          isActive: user.isActive
+          isActive
         }
       }
     });

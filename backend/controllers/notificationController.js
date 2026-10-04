@@ -1,4 +1,5 @@
 import Notification from '../models/Notification.js';
+import { parsePagination } from '../utils/request.js';
 
 // Create a notification
 export const createNotification = async ({ user, title, message, link = '', meta = {} }) => {
@@ -10,18 +11,19 @@ export const createNotification = async ({ user, title, message, link = '', meta
 // Get my notifications
 export const getMyNotifications = async (req, res) => {
   try {
-    const { page = 1, limit = 20, unreadOnly } = req.query;
+    const { page, limit, skip } = parsePagination(req.query);
     const filter = { user: req.user._id };
-    if (String(unreadOnly) === 'true') filter.read = false;
+    if (String(req.query.unreadOnly) === 'true') filter.read = false;
 
-    const notifications = await Notification.find(filter)
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(Number(limit));
+    const [notifications, total] = await Promise.all([
+      Notification.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Notification.countDocuments(filter)
+    ]);
 
-    const total = await Notification.countDocuments(filter);
-
-    res.json({ data: { notifications, total, page: Number(page), limit: Number(limit) } });
+    res.json({ data: { notifications, total, page, limit } });
   } catch (err) {
     res.status(500).json({ message: 'Failed to fetch notifications' });
   }
@@ -34,7 +36,7 @@ export const markAsRead = async (req, res) => {
     const notif = await Notification.findOneAndUpdate(
       { _id: id, user: req.user._id },
       { $set: { read: true } },
-      { new: true }
+      { returnDocument: 'after' }
     );
     if (!notif) return res.status(404).json({ message: 'Notification not found' });
     res.json({ data: { notification: notif } });
@@ -50,7 +52,7 @@ export const markAsUnread = async (req, res) => {
     const notif = await Notification.findOneAndUpdate(
       { _id: id, user: req.user._id },
       { $set: { read: false } },
-      { new: true }
+      { returnDocument: 'after' }
     );
     if (!notif) return res.status(404).json({ message: 'Notification not found' });
     res.json({ data: { notification: notif } });

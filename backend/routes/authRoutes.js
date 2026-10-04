@@ -9,12 +9,14 @@ import {
   deleteCurrentUser
 } from '../controllers/authController.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { normalizePhone, PHONE_PATTERN } from '../utils/request.js';
+
 
 const router = express.Router();
 
 // Validation rules
 const registerValidation = [
-  body('name').trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
+  body('name').isString().trim().isLength({ min: 2, max: 100 }).withMessage('Name must be 2-100 characters'),
   body('email')
     .isEmail()
     .normalizeEmail({
@@ -23,8 +25,9 @@ const registerValidation = [
       gmail_convert_googlemaildotcom: false,
     })
     .withMessage('Please enter a valid email'),
-  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-  body('phone').isMobilePhone().withMessage('Please enter a valid phone number'),
+  body('password').isString().isLength({ min: 6, max: 128 }).withMessage('Password must be 6-128 characters'),
+  body('phone').customSanitizer(normalizePhone).matches(PHONE_PATTERN).withMessage('Please enter a valid phone number'),
+  body('profileImage').optional().isString().withMessage('Profile image must be a string'),
   body('role').optional().isIn(['owner', 'tenant']).withMessage('Invalid role')
 ];
 
@@ -37,12 +40,12 @@ const loginValidation = [
       gmail_convert_googlemaildotcom: false,
     })
     .withMessage('Please enter a valid email'),
-  body('password').notEmpty().withMessage('Password is required')
+  body('password').isString().notEmpty().withMessage('Password is required')
 ];
 
 const updateProfileValidation = [
-  body('name').optional().trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
-  body('phone').optional().isMobilePhone().withMessage('Please enter a valid phone number'),
+  body('name').optional().isString().trim().isLength({ min: 2, max: 100 }).withMessage('Name must be 2-100 characters'),
+  body('phone').optional().customSanitizer(normalizePhone).matches(PHONE_PATTERN).withMessage('Please enter a valid phone number'),
   // Accept any non-empty string to allow base64 data URLs or hosted URLs
   body('profileImage').optional().isString().withMessage('Profile image must be a string')
 ];

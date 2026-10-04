@@ -10,8 +10,11 @@ import {
   deleteReviewById
 } from '../controllers/adminController.js';
 import { authenticateToken, authorize } from '../middleware/auth.js';
+import { registerObjectIdParams } from '../utils/request.js';
 
 const router = express.Router();
+
+registerObjectIdParams(router, ['id']);
 
 // All admin routes require authentication and admin role
 router.use(authenticateToken, authorize('admin'));

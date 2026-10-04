@@ -1,8 +1,11 @@
 import express from 'express';
 import { authenticateToken } from '../middleware/auth.js';
+import { registerObjectIdParams } from '../utils/request.js';
 import { createRating, getRatingSummary, listRatings, canRateCheck, deleteRating } from '../controllers/ratingController.js';
 
 const router = express.Router();
+
+registerObjectIdParams(router, ['id', 'userId', 'propertyId']);
 
 // Private: eligibility check first (avoid shadowing by :userId)
 router.get('/can-rate/check', authenticateToken, canRateCheck);

@@ -1,5 +1,12 @@
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 import User from '../models/User.js';
+
+const findUserFromToken = async (token) => {
+  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  const user = await User.findById(decoded.userId).select('-password');
+  return user && user.isActive ? user : null;
+};
 
 // Verify JWT token from HTTP-only cookie
 export const authenticateToken = async (req, res, next) => {
@@ -10,19 +17,30 @@ export const authenticateToken = async (req, res, next) => {
       return res.status(401).json({ message: 'Access denied. No token provided.' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId).select('-password');
-    
-    if (!user || !user.isActive) {
+    const user = await findUserFromToken(token);
+    if (!user) {
       return res.status(401).json({ message: 'Invalid token or user not found.' });
     }
 
     req.user = user;
     next();
   } catch (error) {
-    console.error('Authentication error:', error);
     res.status(401).json({ message: 'Invalid token.' });
   }
+};
+
+// Attach req.user when a valid cookie is present, but never reject the request.
+// Used by public endpoints that reveal more to the owner of the data.
+export const optionalAuth = async (req, res, next) => {
+  try {
+    const token = req.cookies.token;
+    if (token) {
+      req.user = (await findUserFromToken(token)) || undefined;
+    }
+  } catch {
+    req.user = undefined;
+  }
+  next();
 };
 
 // Role-based access control
@@ -33,8 +51,8 @@ export const authorize = (...roles) => {
     }
 
     if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ 
-        message: 'Access denied. Insufficient permissions.' 
+      return res.status(403).json({
+        message: 'Access denied. Insufficient permissions.'
       });
     }
 
@@ -42,27 +60,29 @@ export const authorize = (...roles) => {
   };
 };
 
-// Check if user owns the resource
-export const checkOwnership = (Model, paramName = 'id') => {
+// Check that the authenticated user owns the resource (admins always pass).
+// ownerField names the document field holding the owner's user id.
+export const checkOwnership = (Model, paramName = 'id', ownerField = 'owner') => {
   return async (req, res, next) => {
     try {
       const resourceId = req.params[paramName];
-      const resource = await Model.findById(resourceId);
+      if (!mongoose.isValidObjectId(resourceId)) {
+        return res.status(400).json({ message: 'Invalid id' });
+      }
 
+      const resource = await Model.findById(resourceId);
       if (!resource) {
         return res.status(404).json({ message: 'Resource not found' });
       }
 
-      // Admin can access everything
       if (req.user.role === 'admin') {
         return next();
       }
 
-      // Check if user owns the resource
-      const ownerId = resource.owner || resource.user || resource._id;
-      if (ownerId.toString() !== req.user._id.toString()) {
-        return res.status(403).json({ 
-          message: 'Access denied. You can only access your own resources.' 
+      const ownerId = resource[ownerField];
+      if (!ownerId || ownerId.toString() !== req.user._id.toString()) {
+        return res.status(403).json({
+          message: 'Access denied. You can only access your own resources.'
         });
       }
 

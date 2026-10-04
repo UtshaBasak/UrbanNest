@@ -1,7 +1,17 @@
+import mongoose from 'mongoose';
 import { validationResult } from 'express-validator';
 import Review from '../models/Review.js';
 import Property from '../models/Property.js';
 import Booking from '../models/Booking.js';
+import { parsePagination, buildPagination } from '../utils/request.js';
+
+// A tenant may review a property once their approved or completed stay has started
+const hasEligibleStay = (tenantId, propertyId) => Booking.exists({
+  tenant: tenantId,
+  property: propertyId,
+  status: { $in: ['approved', 'completed'] },
+  startDate: { $lte: new Date() }
+});
 
 // @desc Create review
 // @route POST /api/reviews
@@ -10,30 +20,23 @@ export const createReview = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
-        message: 'Validation failed', 
-        errors: errors.array() 
+      return res.status(400).json({
+        message: 'Validation failed',
+        errors: errors.array()
       });
     }
 
     const { property: propertyId, rating, comment } = req.body;
 
     // Check if property exists
-    const property = await Property.findById(propertyId);
+    const property = await Property.findOne({ _id: propertyId, isActive: true });
     if (!property) {
       return res.status(404).json({ message: 'Property not found' });
     }
 
-    // Check if user has an approved booking for this property
-    const hasBooking = await Booking.findOne({
-      tenant: req.user._id,
-      property: propertyId,
-      status: 'approved'
-    });
-
-    if (!hasBooking) {
-      return res.status(400).json({ 
-        message: 'You can only review properties you have booked and have been approved for' 
+    if (!(await hasEligibleStay(req.user._id, propertyId))) {
+      return res.status(400).json({
+        message: 'You can only review properties where your approved booking has started'
       });
     }
 
@@ -66,6 +69,10 @@ export const createReview = async (req, res) => {
     });
 
   } catch (error) {
+    // Unique index on tenant+property catches concurrent duplicate submissions
+    if (error?.code === 11000) {
+      return res.status(400).json({ message: 'You have already reviewed this property' });
+    }
     console.error('Create review error:', error);
     res.status(500).json({ message: 'Server error while creating review' });
   }
@@ -77,13 +84,14 @@ export const createReview = async (req, res) => {
 export const canReviewCheck = async (req, res) => {
   try {
     const { propertyId } = req.query;
-    if (!propertyId) return res.status(400).json({ message: 'propertyId is required' });
-    const hasBooking = await Booking.findOne({
-      tenant: req.user._id,
-      property: propertyId,
-      status: 'approved'
-    });
-    return res.json({ data: { canReview: !!hasBooking } });
+    if (!mongoose.isValidObjectId(propertyId)) {
+      return res.status(400).json({ message: 'A valid propertyId is required' });
+    }
+    const [eligible, alreadyReviewed] = await Promise.all([
+      hasEligibleStay(req.user._id, propertyId),
+      Review.exists({ tenant: req.user._id, property: propertyId })
+    ]);
+    return res.json({ data: { canReview: !!eligible && !alreadyReviewed, alreadyReviewed: !!alreadyReviewed } });
   } catch (error) {
     console.error('canReviewCheck error:', error);
     res.status(500).json({ message: 'Server error while checking review permission' });
@@ -96,25 +104,25 @@ export const canReviewCheck = async (req, res) => {
 export const getPropertyReviews = async (req, res) => {
   try {
     const { propertyId } = req.params;
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 10 });
 
-    const reviews = await Review.find({ 
-      property: propertyId, 
-      isPublic: true 
+    const reviews = await Review.find({
+      property: propertyId,
+      isPublic: true
     })
       .populate('tenant', 'name profileImage')
       .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
+      .limit(limit)
+      .skip(skip);
 
-    const total = await Review.countDocuments({ 
-      property: propertyId, 
-      isPublic: true 
+    const total = await Review.countDocuments({
+      property: propertyId,
+      isPublic: true
     });
 
     // Calculate average rating
     const ratingStats = await Review.aggregate([
-      { $match: { property: propertyId, isPublic: true } },
+      { $match: { property: new mongoose.Types.ObjectId(propertyId), isPublic: true } },
       {
         $group: {
           _id: null,
@@ -124,18 +132,14 @@ export const getPropertyReviews = async (req, res) => {
       }
     ]);
 
-    const stats = ratingStats[0] || { averageRating: 0, totalReviews: 0 };
+    const { averageRating = 0, totalReviews = 0 } = ratingStats[0] || {};
+    const stats = { averageRating, totalReviews };
 
     res.json({
       data: {
         reviews,
         stats,
-        pagination: {
-          total,
-          page: Number(page),
-          pages: Math.ceil(total / limit),
-          limit: Number(limit)
-        }
+        pagination: buildPagination(total, page, limit)
       }
     });
 
@@ -150,25 +154,20 @@ export const getPropertyReviews = async (req, res) => {
 // @access Private
 export const getMyReviews = async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 10 });
 
     const reviews = await Review.find({ tenant: req.user._id })
       .populate('property', 'title images location')
       .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
+      .limit(limit)
+      .skip(skip);
 
     const total = await Review.countDocuments({ tenant: req.user._id });
 
     res.json({
       data: {
         reviews,
-        pagination: {
-          total,
-          page: Number(page),
-          pages: Math.ceil(total / limit),
-          limit: Number(limit)
-        }
+        pagination: buildPagination(total, page, limit)
       }
     });
 
@@ -183,19 +182,18 @@ export const getMyReviews = async (req, res) => {
 // @access Private (Owner)
 export const getMyPropertiesReviews = async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 10 });
 
     // First, get all properties owned by the current user
-    const properties = await Property.find({ owner: req.user._id }).select('_id');
-    const propertyIds = properties.map(p => p._id);
+    const propertyIds = await Property.find({ owner: req.user._id }).distinct('_id');
 
     // Then get all reviews for these properties
     const reviews = await Review.find({ property: { $in: propertyIds } })
       .populate('property', 'title images location')
       .populate('tenant', 'name email')
       .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
+      .limit(limit)
+      .skip(skip);
 
     const total = await Review.countDocuments({ property: { $in: propertyIds } });
 
@@ -203,12 +201,7 @@ export const getMyPropertiesReviews = async (req, res) => {
       message: 'Reviews for owner properties fetched successfully',
       data: {
         reviews,
-        pagination: {
-          total,
-          page: Number(page),
-          pages: Math.ceil(total / limit),
-          limit: Number(limit)
-        }
+        pagination: buildPagination(total, page, limit)
       }
     });
 
@@ -225,9 +218,9 @@ export const updateReview = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
-        message: 'Validation failed', 
-        errors: errors.array() 
+      return res.status(400).json({
+        message: 'Validation failed',
+        errors: errors.array()
       });
     }
 
@@ -243,7 +236,7 @@ export const updateReview = async (req, res) => {
     }
 
     const { rating, comment } = req.body;
-    
+
     review.rating = rating;
     review.comment = comment;
     await review.save();
@@ -275,7 +268,7 @@ export const deleteReview = async (req, res) => {
     }
 
     // Check if user owns the review or is admin
-    if (req.user.role !== 'admin' && 
+    if (req.user.role !== 'admin' &&
         review.tenant.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Access denied' });
     }

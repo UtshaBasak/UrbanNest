@@ -1,8 +1,9 @@
 import jwt from 'jsonwebtoken';
 import { validationResult } from 'express-validator';
-import mongoose from 'mongoose';
 import User from '../models/User.js';
 import { deleteUserCascade } from '../utils/cascadeDelete.js';
+import { runInTransaction } from '../utils/transaction.js';
+import { handleKnownDbError } from '../utils/request.js';
 
 const TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
@@ -15,12 +16,16 @@ const generateToken = (userId) => {
 
 // Shared cookie options. Set COOKIE_SAME_SITE=none when the frontend and API
 // are served from different domains (requires HTTPS).
-const cookieOptions = () => ({
-  httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: process.env.COOKIE_SAME_SITE || 'strict',
-  path: '/'
-});
+const cookieOptions = () => {
+  const sameSite = process.env.COOKIE_SAME_SITE || 'strict';
+  return {
+    httpOnly: true,
+    // Browsers reject SameSite=None cookies that are not Secure
+    secure: process.env.NODE_ENV === 'production' || sameSite === 'none',
+    sameSite,
+    path: '/'
+  };
+};
 
 // Set secure HTTP-only cookie
 const setTokenCookie = (res, token) => {
@@ -45,9 +50,12 @@ const toAuthUser = (user) => ({
 // @route DELETE /api/auth/me
 // @access Private
 export const deleteCurrentUser = async (req, res) => {
-  const session = await mongoose.startSession();
   try {
-    await session.withTransaction(async () => {
+    if (req.user.role === 'admin') {
+      return res.status(403).json({ message: 'Admin accounts cannot be deleted' });
+    }
+
+    await runInTransaction(async (session) => {
       const user = await User.findById(req.user._id).session(session);
       if (!user) throw new Error('User not found');
       await deleteUserCascade(user, session);
@@ -58,8 +66,6 @@ export const deleteCurrentUser = async (req, res) => {
   } catch (error) {
     console.error('Delete account error:', error);
     res.status(500).json({ message: 'Server error during account deletion' });
-  } finally {
-    session.endSession();
   }
 };
 
@@ -107,9 +113,8 @@ export const register = async (req, res) => {
         user: toAuthUser(user)
       }
     });
-
-
   } catch (error) {
+    if (handleKnownDbError(res, error)) return;
     console.error('Registration error:', error);
     res.status(500).json({ message: 'Server error during registration' });
   }
@@ -131,7 +136,7 @@ export const login = async (req, res) => {
     const { email, password } = req.body;
 
     // Find user and include password for comparison
-    let user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email });
     if (!user || !user.isActive) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
@@ -140,13 +145,6 @@ export const login = async (req, res) => {
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Invalid credentials' });
-    }
-
-    // Ensure the configured admin account always carries the admin role
-    const adminEmail = (process.env.ADMIN_EMAIL || 'admin@gmail.com').toLowerCase();
-    if (user.email === adminEmail && user.role !== 'admin') {
-      user.role = 'admin';
-      await user.save();
     }
 
     // Generate token and set cookie
@@ -204,7 +202,7 @@ export const updateCurrentUser = async (req, res) => {
     const user = await User.findByIdAndUpdate(
       req.user._id,
       { name, phone, profileImage },
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     );
 
     res.json({
@@ -215,6 +213,7 @@ export const updateCurrentUser = async (req, res) => {
     });
 
   } catch (error) {
+    if (handleKnownDbError(res, error)) return;
     console.error('Profile update error:', error);
     res.status(500).json({ message: 'Server error during profile update' });
   }

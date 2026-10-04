@@ -43,18 +43,22 @@ const bookingSchema = new mongoose.Schema({
 
 // Validate date range
 bookingSchema.pre('validate', function() {
-  // Ensure end strictly after start
-  if (this.startDate >= this.endDate) {
+  // Only check dates when they are set or changed, so existing bookings that have
+  // already started can still be cancelled, decided or shortened
+  const datesChanged = this.isNew || this.isModified('startDate') || this.isModified('endDate');
+  if (datesChanged && this.startDate >= this.endDate) {
     throw new Error('End date must be after start date');
   }
 
-  // Allow same-day bookings by comparing date-only (truncate time)
-  const startDay = new Date(this.startDate);
-  startDay.setHours(0, 0, 0, 0);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  if (startDay < today) {
-    throw new Error('Start date cannot be in the past');
+  // New bookings cannot start in the past (same-day bookings are allowed)
+  if (this.isNew || this.isModified('startDate')) {
+    const startDay = new Date(this.startDate);
+    startDay.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (startDay < today) {
+      throw new Error('Start date cannot be in the past');
+    }
   }
 });
 

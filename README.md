@@ -66,10 +66,10 @@ Browse and compare homes, request bookings, leave reviews, rate owners and tenan
 |------------|------------|
 | Frontend   | React 19, React Router 7, Vite 8, Tailwind CSS 4, Lucide icons |
 | Backend    | Node.js, Express 5, Mongoose 9 |
-| Database   | MongoDB (replica set / Atlas, which transactions require) |
+| Database   | MongoDB (Atlas or a replica set recommended for transactional deletes) |
 | Auth       | JSON Web Tokens in HTTP-only cookies, bcrypt password hashing |
 | Security   | Helmet, CORS allow-list, express-rate-limit, express-validator |
-| Tooling    | Nodemon, Concurrently, GitHub Actions (CI and CodeQL), Dependabot |
+| Tooling    | Node --watch, Concurrently, GitHub Actions (CI and CodeQL), Dependabot |
 
 ## Project Structure
 
@@ -105,7 +105,7 @@ UrbanNest/
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) 22 or newer
-- A MongoDB database. A free [MongoDB Atlas](https://www.mongodb.com/atlas) cluster is the easiest option. Account deletion uses multi-document transactions, which need a replica set; Atlas provides one by default.
+- A MongoDB database. A free [MongoDB Atlas](https://www.mongodb.com/atlas) cluster is the easiest option. Deleting accounts and listings runs inside a transaction when the database supports it (Atlas, or any replica set). On a standalone local MongoDB it still works, just without a transaction.
 
 ### 1. Clone the repository
 
@@ -132,10 +132,16 @@ Open `backend/.env` and set at least `MONGO_URI` and `JWT_SECRET`. See [Environm
 
 ### 4. (Optional) Create an admin account
 
-Set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `backend/.env`, then run:
+Set `ADMIN_EMAIL` and `ADMIN_PASSWORD` (at least 8 characters) in `backend/.env`, then run:
 
 ```bash
 npm run create-admin
+```
+
+If an account with that email already exists, the script stops rather than promoting it. To deliberately turn an existing account into the admin (this also resets its password to `ADMIN_PASSWORD`), run:
+
+```bash
+npm run create-admin -- --force-promote
 ```
 
 ### 5. Start the development servers
@@ -165,8 +171,8 @@ In development, the Vite dev server proxies `/api` requests to the backend, so y
 | `CLIENT_URL`       |          | –              | Allowed frontend origin(s), comma-separated |
 | `COOKIE_SAME_SITE` |          | `strict`       | `strict`, `lax` or `none`. Use `none` when the frontend and API are on different domains. |
 | `ADMIN_NAME`       |          | `Admin User`   | Name for the seeded admin |
-| `ADMIN_EMAIL`      |          | `admin@gmail.com` | Email of the admin account |
-| `ADMIN_PASSWORD`   | for seeding | –           | Password for a newly created admin |
+| `ADMIN_EMAIL`      | for seeding | –          | Email of the admin account |
+| `ADMIN_PASSWORD`   | for seeding | –           | Admin password (min. 8 characters) |
 | `ADMIN_PHONE`      |          | `+1234567890`  | Phone number for the seeded admin |
 
 > For backwards compatibility, a `.env` file in the project root is also loaded as a fallback.
@@ -186,11 +192,11 @@ Run these from the project root:
 |-------------------------|-------------|
 | `npm run install:all`   | Install dependencies for the root, backend and frontend |
 | `npm run dev`           | Run the API and the web app together with hot reload |
-| `npm run dev:backend`   | Run only the API (nodemon) |
+| `npm run dev:backend`   | Run only the API (auto-restarts on changes) |
 | `npm run dev:frontend`  | Run only the web app (Vite) |
 | `npm run build`         | Build the frontend for production (`frontend/dist`) |
 | `npm start`             | Start the API in production mode |
-| `npm run create-admin`  | Create or promote the admin account |
+| `npm run create-admin`  | Create the admin account (see step 4) |
 
 Backend-only: `npm run migrate:property-ids --prefix backend` assigns public property IDs to older listings.
 

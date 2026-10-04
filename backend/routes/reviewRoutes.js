@@ -10,8 +10,11 @@ import {
   canReviewCheck
 } from '../controllers/reviewController.js';
 import { authenticateToken, authorize } from '../middleware/auth.js';
+import { registerObjectIdParams } from '../utils/request.js';
 
 const router = express.Router();
+
+registerObjectIdParams(router, ['id', 'userId', 'propertyId']);
 
 // Validation rules
 const reviewValidation = [

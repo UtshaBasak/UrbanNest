@@ -1,8 +1,11 @@
 import express from 'express';
 import { authenticateToken } from '../middleware/auth.js';
+import { registerObjectIdParams } from '../utils/request.js';
 import { getMyNotifications, markAsRead, markAsUnread, markAllAsRead, markAllAsUnread, deleteNotification } from '../controllers/notificationController.js';
 
 const router = express.Router();
+
+registerObjectIdParams(router, ['id', 'userId', 'propertyId']);
 
 // All routes require auth
 router.get('/my', authenticateToken, getMyNotifications);

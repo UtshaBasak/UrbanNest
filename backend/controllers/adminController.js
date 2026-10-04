@@ -1,30 +1,42 @@
 import User from '../models/User.js';
 import Property from '../models/Property.js';
 import UserRating from '../models/UserRating.js';
-import mongoose from 'mongoose';
-import { deleteUserCascade } from '../utils/cascadeDelete.js';
+import Booking from '../models/Booking.js';
+import Review from '../models/Review.js';
+import { deleteUserCascade, deletePropertiesCascade } from '../utils/cascadeDelete.js';
+import { runInTransaction } from '../utils/transaction.js';
+import { toSearchRegex, parsePagination, buildPagination } from '../utils/request.js';
+
+class HttpError extends Error {
+  constructor(status, message) {
+    super(message);
+    this.status = status;
+  }
+}
+
+// Admin user lists include deactivated accounts so they can be found and reactivated
+const userSearchQuery = (role, search) => {
+  const query = { role };
+  const regex = toSearchRegex(search);
+  if (regex) {
+    query.$or = [{ name: regex }, { email: regex }, { phone: regex }];
+  }
+  return query;
+};
 
 // @desc Get all owners with search functionality
 // @route GET /api/admin/owners
 // @access Private (Admin only)
 export const getOwners = async (req, res) => {
   try {
-    const { page = 1, limit = 20, search } = req.query;
-    const query = { role: 'owner', isActive: true };
-
-    if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-        { phone: { $regex: search, $options: 'i' } }
-      ];
-    }
+    const { page, limit, skip } = parsePagination(req.query);
+    const query = userSearchQuery('owner', req.query.search);
 
     const owners = await User.find(query)
-      .select('-password')
+      .select('-password -favourites')
       .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
+      .limit(limit)
+      .skip(skip);
 
     const total = await User.countDocuments(query);
 
@@ -61,12 +73,7 @@ export const getOwners = async (req, res) => {
     res.json({
       data: {
         owners: ownersWithDetails,
-        pagination: {
-          total,
-          page: Number(page),
-          pages: Math.ceil(total / limit),
-          limit: Number(limit)
-        }
+        pagination: buildPagination(total, page, limit)
       }
     });
 
@@ -81,22 +88,14 @@ export const getOwners = async (req, res) => {
 // @access Private (Admin only)
 export const getTenants = async (req, res) => {
   try {
-    const { page = 1, limit = 20, search } = req.query;
-    const query = { role: 'tenant', isActive: true };
-
-    if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-        { phone: { $regex: search, $options: 'i' } }
-      ];
-    }
+    const { page, limit, skip } = parsePagination(req.query);
+    const query = userSearchQuery('tenant', req.query.search);
 
     const tenants = await User.find(query)
-      .select('-password')
+      .select('-password -favourites')
       .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
+      .limit(limit)
+      .skip(skip);
 
     const total = await User.countDocuments(query);
 
@@ -124,12 +123,7 @@ export const getTenants = async (req, res) => {
     res.json({
       data: {
         tenants: tenantsWithDetails,
-        pagination: {
-          total,
-          page: Number(page),
-          pages: Math.ceil(total / limit),
-          limit: Number(limit)
-        }
+        pagination: buildPagination(total, page, limit)
       }
     });
 
@@ -144,35 +138,34 @@ export const getTenants = async (req, res) => {
 // @access Private (Admin only)
 export const getProperties = async (req, res) => {
   try {
-    const { page = 1, limit = 20, search } = req.query;
+    const { page, limit, skip } = parsePagination(req.query);
     const query = { isActive: true };
 
-    if (search) {
+    const regex = toSearchRegex(req.query.search);
+    if (regex) {
+      // location is a plain string on the Property model
       query.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-        { 'location.city': { $regex: search, $options: 'i' } },
-        { 'location.state': { $regex: search, $options: 'i' } }
+        { title: regex },
+        { description: regex },
+        { location: regex },
+        { propertyId: regex },
+        { type: regex },
+        { availabilityStatus: regex }
       ];
     }
 
     const properties = await Property.find(query)
       .populate('owner', 'name email phone')
       .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
+      .limit(limit)
+      .skip(skip);
 
     const total = await Property.countDocuments(query);
 
     res.json({
       data: {
         properties,
-        pagination: {
-          total,
-          page: Number(page),
-          pages: Math.ceil(total / limit),
-          limit: Number(limit)
-        }
+        pagination: buildPagination(total, page, limit)
       }
     });
 
@@ -186,44 +179,22 @@ export const getProperties = async (req, res) => {
 // @route DELETE /api/admin/users/:id
 // @access Private (Admin only)
 export const deleteUserById = async (req, res) => {
-  const userId = req.params.id;
-  const session = await mongoose.startSession();
-  
   try {
-    await session.withTransaction(async () => {
-      // Find the user to delete
-      const user = await User.findById(userId).session(session);
-      if (!user) {
-        throw new Error('User not found');
-      }
-
-      // Prevent admin from deleting themselves
-      if (req.user._id.toString() === userId) {
-        throw new Error('Cannot delete your own admin account');
-      }
-
-      // Prevent deleting other admins
-      if (user.role === 'admin') {
-        throw new Error('Cannot delete admin accounts');
-      }
-
+    await runInTransaction(async (session) => {
+      const user = await User.findById(req.params.id).session(session);
+      if (!user) throw new HttpError(404, 'User not found');
+      if (String(req.user._id) === String(user._id)) throw new HttpError(403, 'Cannot delete your own admin account');
+      if (user.role === 'admin') throw new HttpError(403, 'Cannot delete admin accounts');
       await deleteUserCascade(user, session);
     });
 
     res.json({ message: 'User and related data deleted successfully' });
-
   } catch (error) {
+    if (error instanceof HttpError) {
+      return res.status(error.status).json({ message: error.message });
+    }
     console.error('Delete user error:', error);
-    if (error.message === 'User not found') {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    if (error.message === 'Cannot delete your own admin account' || 
-        error.message === 'Cannot delete admin accounts') {
-      return res.status(403).json({ message: error.message });
-    }
     res.status(500).json({ message: 'Server error during user deletion' });
-  } finally {
-    session.endSession();
   }
 };
 
@@ -231,43 +202,20 @@ export const deleteUserById = async (req, res) => {
 // @route DELETE /api/admin/properties/:id
 // @access Private (Admin only)
 export const deletePropertyById = async (req, res) => {
-  const propertyId = req.params.id;
-  const session = await mongoose.startSession();
-  
   try {
-    await session.withTransaction(async () => {
-      // Check if property exists
-      const property = await Property.findById(propertyId).session(session);
-      if (!property) {
-        throw new Error('Property not found');
-      }
-
-      // Delete related bookings
-      await mongoose.model('Booking').deleteMany({ property: propertyId }).session(session);
-
-      // Delete related reviews
-      await mongoose.model('Review').deleteMany({ property: propertyId }).session(session);
-
-      // Remove from user favourites
-      await User.updateMany(
-        { 'favourites.itemId': propertyId, 'favourites.itemType': 'property' },
-        { $pull: { favourites: { itemId: propertyId, itemType: 'property' } } }
-      ).session(session);
-
-      // Delete the property
-      await Property.findByIdAndDelete(propertyId).session(session);
+    await runInTransaction(async (session) => {
+      const property = await Property.findById(req.params.id).session(session);
+      if (!property) throw new HttpError(404, 'Property not found');
+      await deletePropertiesCascade([property._id], session);
     });
 
     res.json({ message: 'Property and related data deleted successfully' });
-
   } catch (error) {
-    console.error('Delete property error:', error);
-    if (error.message === 'Property not found') {
-      return res.status(404).json({ message: 'Property not found' });
+    if (error instanceof HttpError) {
+      return res.status(error.status).json({ message: error.message });
     }
+    console.error('Delete property error:', error);
     res.status(500).json({ message: 'Server error during property deletion' });
-  } finally {
-    session.endSession();
   }
 };
 
@@ -289,9 +237,9 @@ export const getAdminStats = async (req, res) => {
       User.countDocuments({ role: 'owner', isActive: true }),
       User.countDocuments({ role: 'tenant', isActive: true }),
       Property.countDocuments({ isActive: true }),
-      mongoose.model('Booking').countDocuments({ status: 'approved' }),
-      mongoose.model('Review').countDocuments(),
-      mongoose.model('UserRating').countDocuments()
+      Booking.countDocuments({ status: 'approved' }),
+      Review.countDocuments(),
+      UserRating.countDocuments()
     ]);
 
     const totalReviews = propertyReviews + userRatings;
@@ -320,65 +268,41 @@ export const getAdminStats = async (req, res) => {
 // @access Private (Admin only)
 export const getAllReviews = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search = '' } = req.query;
-    const skip = (page - 1) * limit;
+    const { page, limit } = parsePagination(req.query, { defaultLimit: 10 });
+    const regex = toSearchRegex(req.query.search);
 
-
-    // Build search query for property reviews
-    const searchQuery = search.trim();
+    // Search by comment, by reviewer/target name or email, or by property title
     let propertyReviewQuery = {};
     let userRatingQuery = {};
-
-    // For property reviews, search by comment, reviewer email, or property title
-    if (searchQuery) {
-      const searchRegex = { $regex: searchQuery, $options: 'i' };
-      propertyReviewQuery = {
-        $or: [
-          { comment: searchRegex },
-        ]
-      };
-      userRatingQuery = {
-        $or: [
-          { comment: searchRegex },
-        ]
-      };
+    if (regex) {
+      const [userIds, propertyIds] = await Promise.all([
+        User.find({ $or: [{ name: regex }, { email: regex }] }).distinct('_id'),
+        Property.find({ title: regex }).distinct('_id')
+      ]);
+      propertyReviewQuery = { $or: [{ comment: regex }, { tenant: { $in: userIds } }, { property: { $in: propertyIds } }] };
+      userRatingQuery = { $or: [{ comment: regex }, { rater: { $in: userIds } }, { ratee: { $in: userIds } }] };
     }
 
-    // Get property reviews and filter by reviewer email or property title if needed
-    let propertyReviews = await mongoose.model('Review').find(propertyReviewQuery)
-      .populate('tenant', 'name email')
-      .populate('property', 'title location')
-      .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip(skip)
-      .lean();
+    // Both collections are merged and sorted by date, so fetch enough of each
+    // to cover every item up to the end of the requested page, then slice.
+    const windowSize = page * limit;
+    const [propertyReviews, userRatings, totalPropertyReviews, totalUserRatings] = await Promise.all([
+      Review.find(propertyReviewQuery)
+        .populate('tenant', 'name email')
+        .populate('property', 'title location')
+        .sort({ createdAt: -1 })
+        .limit(windowSize)
+        .lean(),
+      UserRating.find(userRatingQuery)
+        .populate('ratee', 'name email')
+        .populate('rater', 'name email')
+        .sort({ createdAt: -1 })
+        .limit(windowSize)
+        .lean(),
+      Review.countDocuments(propertyReviewQuery),
+      UserRating.countDocuments(userRatingQuery)
+    ]);
 
-    if (searchQuery) {
-      propertyReviews = propertyReviews.filter(r =>
-        (r.tenant?.email && r.tenant.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (r.property?.title && r.property.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (r.comment && r.comment.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
-    }
-
-    // Get user ratings and filter by reviewer/target email if needed
-    let userRatings = await mongoose.model('UserRating').find(userRatingQuery)
-      .populate('ratee', 'name email')
-      .populate('rater', 'name email')
-      .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip(skip)
-      .lean();
-
-    if (searchQuery) {
-      userRatings = userRatings.filter(r =>
-        (r.rater?.email && r.rater.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (r.ratee?.email && r.ratee.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (r.comment && r.comment.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
-    }
-
-    // Combine and format all reviews
     const allReviews = [
       ...propertyReviews.map(review => ({
         _id: review._id,
@@ -401,31 +325,14 @@ export const getAllReviews = async (req, res) => {
         target: rating.ratee,
         targetType: rating.context === 'owner' ? 'Owner' : 'Tenant'
       }))
-    ];
-
-    // Sort combined results by date
-    allReviews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-    // Apply pagination to combined results
-    const paginatedReviews = allReviews.slice(0, limit);
-
-    // Get total counts for pagination
-    const [totalPropertyReviews, totalUserRatings] = await Promise.all([
-      mongoose.model('Review').countDocuments(propertyReviewQuery),
-      mongoose.model('UserRating').countDocuments(userRatingQuery)
-    ]);
+    ].sort((x, y) => new Date(y.createdAt) - new Date(x.createdAt));
 
     const total = totalPropertyReviews + totalUserRatings;
 
     res.json({
       data: {
-        reviews: paginatedReviews,
-        pagination: {
-          total,
-          page: Number(page),
-          pages: Math.ceil(total / limit),
-          limit: Number(limit)
-        }
+        reviews: allReviews.slice((page - 1) * limit, page * limit),
+        pagination: buildPagination(total, page, limit)
       }
     });
 
@@ -446,14 +353,14 @@ export const deleteReviewById = async (req, res) => {
     let deletedReview;
 
     if (type === 'property') {
-      deletedReview = await mongoose.model('Review').findByIdAndDelete(id);
+      deletedReview = await Review.findByIdAndDelete(id);
     } else if (type === 'user') {
-      deletedReview = await mongoose.model('UserRating').findByIdAndDelete(id);
+      deletedReview = await UserRating.findByIdAndDelete(id);
     } else {
       // Try to find in both collections if type not specified
-      deletedReview = await mongoose.model('Review').findByIdAndDelete(id);
+      deletedReview = await Review.findByIdAndDelete(id);
       if (!deletedReview) {
-        deletedReview = await mongoose.model('UserRating').findByIdAndDelete(id);
+        deletedReview = await UserRating.findByIdAndDelete(id);
       }
     }
 
