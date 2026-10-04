@@ -3,6 +3,7 @@ import LeaveRequest from '../models/LeaveRequest.js';
 import Booking from '../models/Booking.js';
 import { createNotification } from './notificationController.js';
 import { updatePropertyAvailability } from './bookingController.js';
+import { pickAllowed } from '../utils/request.js';
 
 const DECISIONS = ['approve', 'reject'];
 const CONDITIONS = ['immediate', 'end_of_month', 'end_of_next_month', 'end_of_current_booking'];
@@ -38,7 +39,7 @@ const notifySafely = async (payload, context) => {
 export const createLeaveRequest = async (req, res) => {
   try {
     const { bookingId, message = '' } = req.body;
-    if (!mongoose.isValidObjectId(bookingId)) {
+    if (typeof bookingId !== 'string' || !mongoose.isValidObjectId(bookingId)) {
       return res.status(400).json({ message: 'A valid booking is required' });
     }
     if (typeof message !== 'string' || message.length > 1000) {
@@ -89,10 +90,11 @@ export const listMyLeaveRequests = async (req, res) => {
     if (req.user.role === 'owner') query.owner = req.user._id;
     const { status } = req.query;
     if (status !== undefined) {
-      if (!LEAVE_STATUSES.includes(status)) {
+      const statusFilter = pickAllowed(status, LEAVE_STATUSES);
+      if (!statusFilter) {
         return res.status(400).json({ message: 'Invalid status filter' });
       }
-      query.status = status;
+      query.status = statusFilter;
     }
 
     const items = await LeaveRequest.find(query)

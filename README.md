@@ -221,7 +221,10 @@ All endpoints are prefixed with `/api`. Protected routes need the `token` cookie
 
 - Passwords are hashed with bcrypt (12 salt rounds) and never returned by the API.
 - Auth tokens are stored in **HTTP-only** cookies, so page scripts cannot read them.
-- `helmet` sets security headers, the CORS allow-list restricts origins in production, and auth routes are rate-limited.
+- `helmet` sets security headers (including a strict Content Security Policy), and the CORS allow-list restricts origins in production.
+- Every state-changing request is protected against CSRF with a double-submit token (`GET /api/csrf-token`, sent back in the `X-CSRF-Token` header).
+- The whole API is rate-limited per IP, with a stricter limit on authentication routes.
+- User input is type-checked before it reaches MongoDB queries, preventing NoSQL operator injection.
 - Request bodies are validated with `express-validator`.
 - Public registration can only create `tenant` or `owner` accounts. Admin accounts are created through `npm run create-admin`.
 - CodeQL scans run on every push, and Dependabot keeps dependencies up to date.

@@ -9,6 +9,10 @@ export const toSearchRegex = (value, maxLength = 100) => {
   return { $regex: trimmed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' };
 };
 
+// Match a request value against a fixed list and return the list's own entry,
+// so query filters never contain raw user input. Returns undefined on no match.
+export const pickAllowed = (value, allowed) => allowed.find((option) => option === value);
+
 // Strip spaces, dashes and brackets so "+880 1712-345678" matches the User model's phone format
 export const normalizePhone = (value) => (typeof value === 'string' ? value.replace(/[\s\-()]/g, '') : value);
 export const PHONE_PATTERN = /^\+?\d{6,16}$/;

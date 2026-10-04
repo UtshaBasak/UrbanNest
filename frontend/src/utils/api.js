@@ -1,15 +1,15 @@
-import { API_BASE_URL, handleResponse, toSearchParams } from './http';
+import { API_BASE_URL, apiFetch, handleResponse, toSearchParams } from './http';
 
 // Top-rated properties
 export const getTopRatedProperties = async (params = {}) => {
   const searchParams = toSearchParams(params);
-  const response = await fetch(`${API_BASE_URL}/properties/top-rated?${searchParams}`);
+  const response = await apiFetch(`${API_BASE_URL}/properties/top-rated?${searchParams}`);
   return handleResponse(response);
 };
 
 // Auth API functions
 export const login = async (email, password) => {
-  const response = await fetch(`${API_BASE_URL}/auth/login`, {
+  const response = await apiFetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -21,7 +21,7 @@ export const login = async (email, password) => {
 };
 
 export const register = async (userData) => {
-  const response = await fetch(`${API_BASE_URL}/auth/register`, {
+  const response = await apiFetch(`${API_BASE_URL}/auth/register`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -33,7 +33,7 @@ export const register = async (userData) => {
 };
 
 export const logout = async () => {
-  const response = await fetch(`${API_BASE_URL}/auth/logout`, {
+  const response = await apiFetch(`${API_BASE_URL}/auth/logout`, {
     method: 'POST',
     credentials: 'include',
   });
@@ -41,14 +41,14 @@ export const logout = async () => {
 };
 
 export const getCurrentUser = async () => {
-  const response = await fetch(`${API_BASE_URL}/auth/me`, {
+  const response = await apiFetch(`${API_BASE_URL}/auth/me`, {
     credentials: 'include',
   });
   return handleResponse(response);
 };
 
 export const updateProfile = async (userId, profileData) => {
-  const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+  const response = await apiFetch(`${API_BASE_URL}/users/${userId}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -62,7 +62,7 @@ export const updateProfile = async (userId, profileData) => {
 // Property API functions
 // Suggested properties for logged-in user
 export const getSuggestedProperties = async () => {
-  const response = await fetch(`${API_BASE_URL}/properties/suggested`, {
+  const response = await apiFetch(`${API_BASE_URL}/properties/suggested`, {
     credentials: 'include',
   });
   return handleResponse(response);
@@ -70,7 +70,7 @@ export const getSuggestedProperties = async () => {
 
 export const getProperties = async (params = {}) => {
   const searchParams = toSearchParams(params);
-  const response = await fetch(`${API_BASE_URL}/properties?${searchParams}`);
+  const response = await apiFetch(`${API_BASE_URL}/properties?${searchParams}`);
   return handleResponse(response);
 };
 
@@ -79,12 +79,12 @@ export const searchProperties = async (params = {}) => {
 };
 
 export const getProperty = async (id) => {
-  const response = await fetch(`${API_BASE_URL}/properties/${id}`);
+  const response = await apiFetch(`${API_BASE_URL}/properties/${id}`);
   return handleResponse(response);
 };
 
 export const createProperty = async (propertyData) => {
-  const response = await fetch(`${API_BASE_URL}/properties`, {
+  const response = await apiFetch(`${API_BASE_URL}/properties`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -96,7 +96,7 @@ export const createProperty = async (propertyData) => {
 };
 
 export const updateProperty = async (id, propertyData) => {
-  const response = await fetch(`${API_BASE_URL}/properties/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/properties/${id}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -108,7 +108,7 @@ export const updateProperty = async (id, propertyData) => {
 };
 
 export const deleteProperty = async (id) => {
-  const response = await fetch(`${API_BASE_URL}/properties/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/properties/${id}`, {
     method: 'DELETE',
     credentials: 'include',
   });
@@ -117,13 +117,13 @@ export const deleteProperty = async (id) => {
 
 export const getPropertiesByOwner = async (ownerId, params = {}) => {
   const searchParams = toSearchParams(params);
-  const response = await fetch(`${API_BASE_URL}/properties/owner/${ownerId}?${searchParams}`);
+  const response = await apiFetch(`${API_BASE_URL}/properties/owner/${ownerId}?${searchParams}`);
   return handleResponse(response);
 };
 
 // Booking API functions
 export const createBooking = async (bookingData) => {
-  const response = await fetch(`${API_BASE_URL}/bookings`, {
+  const response = await apiFetch(`${API_BASE_URL}/bookings`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -136,14 +136,14 @@ export const createBooking = async (bookingData) => {
 
 export const getMyBookings = async (params = {}) => {
   const searchParams = toSearchParams(params);
-  const response = await fetch(`${API_BASE_URL}/bookings/my?${searchParams}`, {
+  const response = await apiFetch(`${API_BASE_URL}/bookings/my?${searchParams}`, {
     credentials: 'include',
   });
   return handleResponse(response);
 };
 
 export const updateBookingStatus = async (id, status, rejectionReason = '') => {
-  const response = await fetch(`${API_BASE_URL}/bookings/${id}/status`, {
+  const response = await apiFetch(`${API_BASE_URL}/bookings/${id}/status`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -155,7 +155,7 @@ export const updateBookingStatus = async (id, status, rejectionReason = '') => {
 };
 
 export const cancelBooking = async (id) => {
-  const response = await fetch(`${API_BASE_URL}/bookings/${id}/cancel`, {
+  const response = await apiFetch(`${API_BASE_URL}/bookings/${id}/cancel`, {
     method: 'PUT',
     credentials: 'include',
   });
@@ -164,7 +164,7 @@ export const cancelBooking = async (id) => {
 
 // Review API functions
 export const createReview = async (reviewData) => {
-  const response = await fetch(`${API_BASE_URL}/reviews`, {
+  const response = await apiFetch(`${API_BASE_URL}/reviews`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -177,13 +177,13 @@ export const createReview = async (reviewData) => {
 
 export const getPropertyReviews = async (propertyId, params = {}) => {
   const searchParams = toSearchParams(params);
-  const response = await fetch(`${API_BASE_URL}/reviews/property/${propertyId}?${searchParams}`);
+  const response = await apiFetch(`${API_BASE_URL}/reviews/property/${propertyId}?${searchParams}`);
   return handleResponse(response);
 };
 
 export const getMyReviews = async (params = {}) => {
   const searchParams = toSearchParams(params);
-  const response = await fetch(`${API_BASE_URL}/reviews/my?${searchParams}`, {
+  const response = await apiFetch(`${API_BASE_URL}/reviews/my?${searchParams}`, {
     credentials: 'include',
   });
   return handleResponse(response);
@@ -191,14 +191,14 @@ export const getMyReviews = async (params = {}) => {
 
 export const getMyPropertiesReviews = async (params = {}) => {
   const searchParams = toSearchParams(params);
-  const response = await fetch(`${API_BASE_URL}/reviews/my-properties?${searchParams}`, {
+  const response = await apiFetch(`${API_BASE_URL}/reviews/my-properties?${searchParams}`, {
     credentials: 'include',
   });
   return handleResponse(response);
 };
 
 export const deleteReview = async (reviewId) => {
-  const response = await fetch(`${API_BASE_URL}/reviews/${reviewId}`, {
+  const response = await apiFetch(`${API_BASE_URL}/reviews/${reviewId}`, {
     method: 'DELETE',
     credentials: 'include',
   });
@@ -207,7 +207,7 @@ export const deleteReview = async (reviewId) => {
 
 // User API functions
 export const getUser = async (id) => {
-  const response = await fetch(`${API_BASE_URL}/users/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/users/${id}`, {
     credentials: 'include',
   });
   return handleResponse(response);
@@ -215,14 +215,14 @@ export const getUser = async (id) => {
 
 // Favourites API (tenant)
 export const getMyFavourites = async () => {
-  const response = await fetch(`${API_BASE_URL}/users/me/favourites`, {
+  const response = await apiFetch(`${API_BASE_URL}/users/me/favourites`, {
     credentials: 'include',
   });
   return handleResponse(response);
 };
 
 export const addFavourite = async ({ itemId, itemType }) => {
-  const response = await fetch(`${API_BASE_URL}/users/me/favourites`, {
+  const response = await apiFetch(`${API_BASE_URL}/users/me/favourites`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -232,7 +232,7 @@ export const addFavourite = async ({ itemId, itemType }) => {
 };
 
 export const removeFavourite = async ({ itemType, itemId }) => {
-  const response = await fetch(`${API_BASE_URL}/users/me/favourites/${itemType}/${itemId}`, {
+  const response = await apiFetch(`${API_BASE_URL}/users/me/favourites/${itemType}/${itemId}`, {
     method: 'DELETE',
     credentials: 'include',
   });
@@ -241,13 +241,13 @@ export const removeFavourite = async ({ itemType, itemId }) => {
 
 export const getUsers = async (params = {}) => {
   const searchParams = toSearchParams(params);
-  const response = await fetch(`${API_BASE_URL}/users?${searchParams}`);
+  const response = await apiFetch(`${API_BASE_URL}/users?${searchParams}`);
   return handleResponse(response);
 };
 
 // Auth deletion
 export const deleteCurrentUser = async () => {
-  const response = await fetch(`${API_BASE_URL}/auth/me`, {
+  const response = await apiFetch(`${API_BASE_URL}/auth/me`, {
     method: 'DELETE',
     credentials: 'include',
   });
@@ -257,14 +257,14 @@ export const deleteCurrentUser = async () => {
 // Notification API functions
 export const getMyNotifications = async (params = {}) => {
   const searchParams = toSearchParams(params);
-  const response = await fetch(`${API_BASE_URL}/notifications/my?${searchParams}`, {
+  const response = await apiFetch(`${API_BASE_URL}/notifications/my?${searchParams}`, {
     credentials: 'include',
   });
   return handleResponse(response);
 };
 
 export const markNotificationRead = async (id) => {
-  const response = await fetch(`${API_BASE_URL}/notifications/${id}/read`, {
+  const response = await apiFetch(`${API_BASE_URL}/notifications/${id}/read`, {
     method: 'PUT',
     credentials: 'include',
   });
@@ -272,7 +272,7 @@ export const markNotificationRead = async (id) => {
 };
 
 export const markNotificationUnread = async (id) => {
-  const response = await fetch(`${API_BASE_URL}/notifications/${id}/unread`, {
+  const response = await apiFetch(`${API_BASE_URL}/notifications/${id}/unread`, {
     method: 'PUT',
     credentials: 'include',
   });
@@ -280,7 +280,7 @@ export const markNotificationUnread = async (id) => {
 };
 
 export const markAllNotificationsRead = async () => {
-  const response = await fetch(`${API_BASE_URL}/notifications/read-all`, {
+  const response = await apiFetch(`${API_BASE_URL}/notifications/read-all`, {
     method: 'PUT',
     credentials: 'include',
   });
@@ -288,7 +288,7 @@ export const markAllNotificationsRead = async () => {
 };
 
 export const markAllNotificationsUnread = async () => {
-  const response = await fetch(`${API_BASE_URL}/notifications/unread-all`, {
+  const response = await apiFetch(`${API_BASE_URL}/notifications/unread-all`, {
     method: 'PUT',
     credentials: 'include',
   });
@@ -297,7 +297,7 @@ export const markAllNotificationsUnread = async () => {
 
 // Delete booking
 export const deleteBooking = async (id) => {
-  const response = await fetch(`${API_BASE_URL}/bookings/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/bookings/${id}`, {
     method: 'DELETE',
     credentials: 'include',
   });
@@ -306,7 +306,7 @@ export const deleteBooking = async (id) => {
 
 // Delete rating
 export const deleteRating = async (id) => {
-  const response = await fetch(`${API_BASE_URL}/ratings/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/ratings/${id}`, {
     method: 'DELETE',
     credentials: 'include',
   });
@@ -314,7 +314,7 @@ export const deleteRating = async (id) => {
 };
 
 export const deleteNotification = async (id) => {
-  const response = await fetch(`${API_BASE_URL}/notifications/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/notifications/${id}`, {
     method: 'DELETE',
     credentials: 'include',
   });
@@ -323,7 +323,7 @@ export const deleteNotification = async (id) => {
 
 // Rating API functions
 export const createUserRating = async ({ rateeId, rating, comment = '', context }) => {
-  const response = await fetch(`${API_BASE_URL}/ratings`, {
+  const response = await apiFetch(`${API_BASE_URL}/ratings`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -335,13 +335,13 @@ export const createUserRating = async ({ rateeId, rating, comment = '', context 
 };
 
 export const getUserRatingSummary = async (userId) => {
-  const response = await fetch(`${API_BASE_URL}/ratings/${userId}/summary`);
+  const response = await apiFetch(`${API_BASE_URL}/ratings/${userId}/summary`);
   return handleResponse(response);
 };
 
 export const listUserRatings = async (userId, params = {}) => {
   const searchParams = toSearchParams(params);
-  const response = await fetch(`${API_BASE_URL}/ratings/${userId}?${searchParams}`);
+  const response = await apiFetch(`${API_BASE_URL}/ratings/${userId}?${searchParams}`);
   return handleResponse(response);
 };
 
@@ -350,7 +350,7 @@ export const canRateUser = async (rateeId, context) => {
   const searchParams = new URLSearchParams();
   if (rateeId) searchParams.append('rateeId', rateeId);
   if (context) searchParams.append('context', context);
-  const response = await fetch(`${API_BASE_URL}/ratings/can-rate/check?${searchParams}`, {
+  const response = await apiFetch(`${API_BASE_URL}/ratings/can-rate/check?${searchParams}`, {
     credentials: 'include',
   });
   return handleResponse(response);
@@ -359,14 +359,14 @@ export const canRateUser = async (rateeId, context) => {
 export const canReviewProperty = async (propertyId) => {
   const searchParams = new URLSearchParams();
   if (propertyId) searchParams.append('propertyId', propertyId);
-  const response = await fetch(`${API_BASE_URL}/reviews/can-review/check?${searchParams}`, {
+  const response = await apiFetch(`${API_BASE_URL}/reviews/can-review/check?${searchParams}`, {
     credentials: 'include',
   });
   return handleResponse(response);
 };
 
 export const canViewTenantContact = async (userId) => {
-  const response = await fetch(`${API_BASE_URL}/users/${userId}/can-view-contact`, {
+  const response = await apiFetch(`${API_BASE_URL}/users/${userId}/can-view-contact`, {
     credentials: 'include',
   });
   return handleResponse(response);
@@ -374,7 +374,7 @@ export const canViewTenantContact = async (userId) => {
 
 // Leave Request API functions
 export const createLeaveRequest = async ({ bookingId, message }) => {
-  const response = await fetch(`${API_BASE_URL}/leave-requests`, {
+  const response = await apiFetch(`${API_BASE_URL}/leave-requests`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -385,14 +385,14 @@ export const createLeaveRequest = async ({ bookingId, message }) => {
 
 export const listMyLeaveRequests = async (params = {}) => {
   const searchParams = toSearchParams(params);
-  const response = await fetch(`${API_BASE_URL}/leave-requests/my?${searchParams}`, {
+  const response = await apiFetch(`${API_BASE_URL}/leave-requests/my?${searchParams}`, {
     credentials: 'include',
   });
   return handleResponse(response);
 };
 
 export const decideLeaveRequest = async (id, { decision, condition, note }) => {
-  const response = await fetch(`${API_BASE_URL}/leave-requests/${id}/decision`, {
+  const response = await apiFetch(`${API_BASE_URL}/leave-requests/${id}/decision`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -403,7 +403,7 @@ export const decideLeaveRequest = async (id, { decision, condition, note }) => {
 
 // Admin API functions
 export const getAdminStats = async () => {
-  const response = await fetch(`${API_BASE_URL}/admin/stats`, {
+  const response = await apiFetch(`${API_BASE_URL}/admin/stats`, {
     credentials: 'include',
   });
   return handleResponse(response);
@@ -411,7 +411,7 @@ export const getAdminStats = async () => {
 
 export const getOwners = async (params = {}) => {
   const searchParams = toSearchParams(params);
-  const response = await fetch(`${API_BASE_URL}/admin/owners?${searchParams}`, {
+  const response = await apiFetch(`${API_BASE_URL}/admin/owners?${searchParams}`, {
     credentials: 'include',
   });
   return handleResponse(response);
@@ -419,7 +419,7 @@ export const getOwners = async (params = {}) => {
 
 export const getTenants = async (params = {}) => {
   const searchParams = toSearchParams(params);
-  const response = await fetch(`${API_BASE_URL}/admin/tenants?${searchParams}`, {
+  const response = await apiFetch(`${API_BASE_URL}/admin/tenants?${searchParams}`, {
     credentials: 'include',
   });
   return handleResponse(response);
@@ -427,14 +427,14 @@ export const getTenants = async (params = {}) => {
 
 export const getAdminProperties = async (params = {}) => {
   const searchParams = toSearchParams(params);
-  const response = await fetch(`${API_BASE_URL}/admin/properties?${searchParams}`, {
+  const response = await apiFetch(`${API_BASE_URL}/admin/properties?${searchParams}`, {
     credentials: 'include',
   });
   return handleResponse(response);
 };
 
 export const deleteUserById = async (id) => {
-  const response = await fetch(`${API_BASE_URL}/admin/users/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/admin/users/${id}`, {
     method: 'DELETE',
     credentials: 'include',
   });
@@ -442,7 +442,7 @@ export const deleteUserById = async (id) => {
 };
 
 export const deletePropertyById = async (id) => {
-  const response = await fetch(`${API_BASE_URL}/admin/properties/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/admin/properties/${id}`, {
     method: 'DELETE',
     credentials: 'include',
   });
@@ -451,7 +451,7 @@ export const deletePropertyById = async (id) => {
 
 export const getAdminReviews = async (params = {}) => {
   const searchParams = toSearchParams(params);
-  const response = await fetch(`${API_BASE_URL}/admin/reviews?${searchParams}`, {
+  const response = await apiFetch(`${API_BASE_URL}/admin/reviews?${searchParams}`, {
     credentials: 'include',
   });
   return handleResponse(response);
@@ -462,7 +462,7 @@ export const deleteReviewById = async (id, type = '') => {
   if (type) {
     searchParams.append('type', type);
   }
-  const response = await fetch(`${API_BASE_URL}/admin/reviews/${id}?${searchParams}`, {
+  const response = await apiFetch(`${API_BASE_URL}/admin/reviews/${id}?${searchParams}`, {
     method: 'DELETE',
     credentials: 'include',
   });

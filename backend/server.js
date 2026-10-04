@@ -19,6 +19,7 @@ import adminRoutes from './routes/adminRoutes.js';
 
 // Import config
 import connectDB from './config/db.js';
+import { csrfProtection, getCsrfToken } from './middleware/csrf.js';
 
 // Fail fast on missing configuration, then connect to the database
 assertRequiredEnv();
@@ -32,20 +33,21 @@ if (process.env.NODE_ENV === 'production') {
   app.set('trust proxy', 1);
 }
 
-// Security middleware
-app.use(helmet({
-  contentSecurityPolicy: false // Allow inline styles for development
-}));
+// Security headers (the API only serves JSON, so Helmet's strict defaults apply)
+app.use(helmet());
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  limit: 100, // Limit each IP to 100 requests per windowMs
+// Rate limiting: a general limit for the whole API and a stricter one for auth
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const rateLimitOptions = {
+  windowMs: RATE_LIMIT_WINDOW_MS,
   standardHeaders: 'draft-8',
   legacyHeaders: false,
   message: { message: 'Too many requests from this IP, please try again later.' }
-});
-app.use('/api/auth', limiter);
+};
+const apiLimiter = rateLimit({ ...rateLimitOptions, limit: 1000 });
+const authLimiter = rateLimit({ ...rateLimitOptions, limit: 100 });
+app.use('/api', apiLimiter);
+app.use('/api/auth', authLimiter);
 
 // CORS configuration (CLIENT_URL may hold a comma-separated list of origins)
 const allowedOrigins = [
@@ -70,13 +72,17 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token']
 }));
 
 // Body parsing middleware (increase limit for base64 images)
 app.use(express.json({ limit: '25mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// CSRF protection for every state-changing API request
+app.use('/api', csrfProtection);
+app.get('/api/csrf-token', getCsrfToken);
 
 // Logging
 if (process.env.NODE_ENV === 'development') {

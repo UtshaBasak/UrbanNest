@@ -2,7 +2,9 @@ import mongoose from 'mongoose';
 import Booking from '../models/Booking.js';
 import Property from '../models/Property.js';
 import UserRating from '../models/UserRating.js';
-import { parsePagination, buildPagination } from '../utils/request.js';
+import { parsePagination, buildPagination, pickAllowed } from '../utils/request.js';
+
+const RATING_CONTEXTS = ['owner', 'tenant'];
 
 // Helper: the rater may rate the ratee when an approved or completed booking links
 // the tenant to one of the owner's properties
@@ -24,14 +26,15 @@ async function canRate(raterId, rateeId, context) {
 // @access Private
 export const createRating = async (req, res) => {
   try {
-    const { rateeId, rating, comment = '', context } = req.body;
-    if (!rateeId || rating === undefined || !context) {
+    const { rateeId, rating, comment = '' } = req.body;
+    if (!rateeId || rating === undefined || !req.body.context) {
       return res.status(400).json({ message: 'rateeId, rating, and context are required' });
     }
-    if (!mongoose.isValidObjectId(rateeId)) {
+    if (typeof rateeId !== 'string' || !mongoose.isValidObjectId(rateeId)) {
       return res.status(400).json({ message: 'Invalid rateeId' });
     }
-    if (!['owner', 'tenant'].includes(context)) {
+    const context = pickAllowed(req.body.context, RATING_CONTEXTS);
+    if (!context) {
       return res.status(400).json({ message: 'Invalid context' });
     }
     const ratingValue = Number(rating);
@@ -67,14 +70,15 @@ export const createRating = async (req, res) => {
 // @access Private
 export const canRateCheck = async (req, res) => {
   try {
-    const { rateeId, context } = req.query;
-    if (!rateeId || !context) {
+    const { rateeId } = req.query;
+    if (!rateeId || !req.query.context) {
       return res.status(400).json({ message: 'rateeId and context are required' });
     }
-    if (!['owner', 'tenant'].includes(context)) {
+    const context = pickAllowed(req.query.context, RATING_CONTEXTS);
+    if (!context) {
       return res.status(400).json({ message: 'Invalid context' });
     }
-    if (!mongoose.isValidObjectId(rateeId)) {
+    if (typeof rateeId !== 'string' || !mongoose.isValidObjectId(rateeId)) {
       return res.status(400).json({ message: 'Invalid rateeId' });
     }
     const ok = await canRate(req.user._id, rateeId, context);

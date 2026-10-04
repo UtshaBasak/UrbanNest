@@ -7,7 +7,10 @@ import Review from '../models/Review.js';
 import UserRating from '../models/UserRating.js';
 import { deleteUserCascade } from '../utils/cascadeDelete.js';
 import { runInTransaction } from '../utils/transaction.js';
-import { toSearchRegex, parsePagination, buildPagination, handleKnownDbError } from '../utils/request.js';
+import { toSearchRegex, parsePagination, buildPagination, handleKnownDbError, pickAllowed } from '../utils/request.js';
+
+const DIRECTORY_ROLES = ['owner', 'tenant'];
+const FAVOURITE_TYPES = ['owner', 'property'];
 
 // Fields anyone may see in the public directory and on profiles
 const PUBLIC_USER_FIELDS = 'name email role profileImage createdAt';
@@ -52,10 +55,14 @@ export const updateUserProfile = async (req, res) => {
     const target = await User.findById(targetId);
     if (!target) return res.status(404).json({ message: 'User not found' });
 
+    // Only plain strings may reach the update (rejects objects like {"$set": ...})
+    const { name, phone, profileImage } = req.body;
     const updates = {};
-    for (const field of ['name', 'phone', 'profileImage', 'role']) {
-      if (req.body[field] !== undefined) updates[field] = req.body[field];
-    }
+    if (typeof name === 'string') updates.name = name;
+    if (typeof phone === 'string') updates.phone = phone;
+    if (typeof profileImage === 'string') updates.profileImage = profileImage;
+    const role = pickAllowed(req.body.role, DIRECTORY_ROLES);
+    if (role) updates.role = role;
 
     if (updates.role !== undefined && updates.role !== target.role) {
       // Admin accounts are managed through scripts/createAdmin.js only
@@ -89,10 +96,11 @@ export const getUsers = async (req, res) => {
     const query = { isActive: true, role: { $in: ['owner', 'tenant'] } };
 
     if (role !== undefined) {
-      if (!['owner', 'tenant'].includes(role)) {
+      const roleFilter = pickAllowed(role, DIRECTORY_ROLES);
+      if (!roleFilter) {
         return res.status(400).json({ message: 'role must be owner or tenant' });
       }
-      query.role = role;
+      query.role = roleFilter;
     }
 
     const searchRegex = toSearchRegex(search);
@@ -196,11 +204,12 @@ export const addFavourite = async (req, res) => {
     if (!req.user || req.user.role !== 'tenant') {
       return res.status(403).json({ message: 'Only tenants can add favourites' });
     }
-    const { itemId, itemType } = req.body;
-    if (!itemId || !itemType || !['owner', 'property'].includes(itemType)) {
+    const { itemId } = req.body;
+    const itemType = pickAllowed(req.body.itemType, FAVOURITE_TYPES);
+    if (!itemId || !itemType) {
       return res.status(400).json({ message: 'itemId and valid itemType are required' });
     }
-    if (!mongoose.isValidObjectId(itemId)) {
+    if (typeof itemId !== 'string' || !mongoose.isValidObjectId(itemId)) {
       return res.status(400).json({ message: 'Invalid itemId' });
     }
 
@@ -366,10 +375,11 @@ export const searchUsers = async (req, res) => {
     };
 
     if (role !== undefined) {
-      if (!['owner', 'tenant'].includes(role)) {
+      const roleFilter = pickAllowed(role, DIRECTORY_ROLES);
+      if (!roleFilter) {
         return res.status(400).json({ message: 'role must be owner or tenant' });
       }
-      query.role = role;
+      query.role = roleFilter;
     }
 
     const users = await User.find(query)

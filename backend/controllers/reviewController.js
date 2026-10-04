@@ -27,6 +27,9 @@ export const createReview = async (req, res) => {
     }
 
     const { property: propertyId, rating, comment } = req.body;
+    if (typeof propertyId !== 'string') {
+      return res.status(400).json({ message: 'Invalid property ID' });
+    }
 
     // Check if property exists
     const property = await Property.findOne({ _id: propertyId, isActive: true });
@@ -84,7 +87,7 @@ export const createReview = async (req, res) => {
 export const canReviewCheck = async (req, res) => {
   try {
     const { propertyId } = req.query;
-    if (!mongoose.isValidObjectId(propertyId)) {
+    if (typeof propertyId !== 'string' || !mongoose.isValidObjectId(propertyId)) {
       return res.status(400).json({ message: 'A valid propertyId is required' });
     }
     const [eligible, alreadyReviewed] = await Promise.all([

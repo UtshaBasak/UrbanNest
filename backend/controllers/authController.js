@@ -77,13 +77,17 @@ export const register = async (req, res) => {
     // Check validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
-        message: 'Validation failed', 
-        errors: errors.array() 
+      return res.status(400).json({
+        message: 'Validation failed',
+        errors: errors.array()
       });
     }
 
     const { name, email, password, phone, role, profileImage } = req.body;
+    // Only plain strings may reach the query (rejects objects like {"$ne": null})
+    if (typeof email !== 'string') {
+      return res.status(400).json({ message: 'Please enter a valid email' });
+    }
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -127,15 +131,17 @@ export const login = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
-        message: 'Validation failed', 
-        errors: errors.array() 
+      return res.status(400).json({
+        message: 'Validation failed',
+        errors: errors.array()
       });
     }
 
     const { email, password } = req.body;
+    if (typeof email !== 'string') {
+      return res.status(400).json({ message: 'Please enter a valid email' });
+    }
 
-    // Find user and include password for comparison
     const user = await User.findOne({ email });
     if (!user || !user.isActive) {
       return res.status(401).json({ message: 'Invalid credentials' });
@@ -169,7 +175,7 @@ export const login = async (req, res) => {
 // @access Private
 export const logout = (req, res) => {
   clearTokenCookie(res);
-  
+
   res.json({ message: 'Logout successful' });
 };
 
@@ -191,17 +197,21 @@ export const updateCurrentUser = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
-        message: 'Validation failed', 
-        errors: errors.array() 
+      return res.status(400).json({
+        message: 'Validation failed',
+        errors: errors.array()
       });
     }
 
     const { name, phone, profileImage } = req.body;
-    
+    const updates = {};
+    if (typeof name === 'string') updates.name = name;
+    if (typeof phone === 'string') updates.phone = phone;
+    if (typeof profileImage === 'string') updates.profileImage = profileImage;
+
     const user = await User.findByIdAndUpdate(
       req.user._id,
-      { name, phone, profileImage },
+      updates,
       { returnDocument: 'after', runValidators: true }
     );
 

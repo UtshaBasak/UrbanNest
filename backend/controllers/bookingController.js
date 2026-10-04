@@ -4,7 +4,7 @@ import Booking from '../models/Booking.js';
 import Property from '../models/Property.js';
 import LeaveRequest from '../models/LeaveRequest.js';
 import { createNotification } from './notificationController.js';
-import { parsePagination, buildPagination, handleKnownDbError } from '../utils/request.js';
+import { parsePagination, buildPagination, handleKnownDbError, pickAllowed } from '../utils/request.js';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const BOOKING_STATUSES = ['pending', 'approved', 'rejected', 'cancelled', 'completed'];
@@ -60,7 +60,7 @@ export const createBooking = async (req, res) => {
   try {
     const { property: propertyId, startDate, endDate, message } = req.body;
 
-    if (!mongoose.isValidObjectId(propertyId)) {
+    if (typeof propertyId !== 'string' || !mongoose.isValidObjectId(propertyId)) {
       return res.status(400).json({ message: 'A valid property is required' });
     }
 
@@ -151,10 +151,11 @@ export const getMyBookings = async (req, res) => {
     }
 
     if (status !== undefined) {
-      if (!BOOKING_STATUSES.includes(status)) {
+      const statusFilter = pickAllowed(status, BOOKING_STATUSES);
+      if (!statusFilter) {
         return res.status(400).json({ message: 'Invalid status filter' });
       }
-      query.status = status;
+      query.status = statusFilter;
     }
 
     const [bookings, total] = await Promise.all([
