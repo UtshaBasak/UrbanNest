@@ -21,10 +21,13 @@ const LeaveRequests = () => {
   const [error, setError] = useState('');
 
   const [decisionById, setDecisionById] = useState({});
+  // Id of the leave request whose decision is currently being submitted
+  const [pendingId, setPendingId] = useState(null);
 
   const fetchItems = async () => {
     try {
       setLoading(true);
+      setError('');
       const res = await listMyLeaveRequests();
       setItems(res?.data?.leaveRequests || []);
     } catch (e) {
@@ -40,16 +43,20 @@ const LeaveRequests = () => {
   }, []);
 
   const handleDecision = async (id, approve) => {
+    if (pendingId) return;
     const state = decisionById[id] || { condition: 'end_of_month', note: '' };
     try {
+      setPendingId(id);
       await decideLeaveRequest(id, {
         decision: approve ? 'approve' : 'reject',
-        condition: state.condition,
+        condition: state.condition || 'end_of_month',
         note: state.note,
       });
       await fetchItems();
     } catch (e) {
       alert(e?.message || 'Failed to submit decision');
+    } finally {
+      setPendingId(null);
     }
   };
 
@@ -137,13 +144,15 @@ const LeaveRequests = () => {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleDecision(lr._id, true)}
-                        className="inline-flex items-center px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md"
+                        disabled={pendingId !== null}
+                        className="inline-flex items-center px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Approve
                       </button>
                       <button
                         onClick={() => handleDecision(lr._id, false)}
-                        className="inline-flex items-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-md"
+                        disabled={pendingId !== null}
+                        className="inline-flex items-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Reject
                       </button>

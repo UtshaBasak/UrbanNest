@@ -1,55 +1,52 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Calendar, 
-  Star, 
-  Building2, 
+import {
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  Star,
+  Building2,
   ArrowLeft,
   Edit,
-  Save,
-  X,
   Heart
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { getUser, getPropertiesByOwner, updateProfile, createUserRating, canRateUser, canViewTenantContact, getMyFavourites, addFavourite, removeFavourite } from '../utils/api';
+import { getUser, getPropertiesByOwner, createUserRating, canRateUser, getMyFavourites, addFavourite, removeFavourite } from '../utils/api';
 
 const UserProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user: currentUser, updateProfile: updateAuthProfile } = useAuth();
+  const { user: currentUser } = useAuth();
   const curId = currentUser?._id || currentUser?.id;
   const [user, setUser] = useState(null);
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState({
-    name: '',
-    phone: '',
-    profileImage: ''
-  });
-  const [updateLoading, setUpdateLoading] = useState(false);
   const [canRate, setCanRate] = useState(false);
   const [ratingSummary, setRatingSummary] = useState({ owner: { avg: 0, count: 0 }, tenant: { avg: 0, count: 0 } });
   const [rateValue, setRateValue] = useState(5);
   const [rateComment, setRateComment] = useState('');
-  const [canViewPhone, setCanViewPhone] = useState(false);
   const [rateLoading, setRateLoading] = useState(false);
   const [tenantActivity, setTenantActivity] = useState({ bookingsCount: 0, reviewsCount: 0 });
   const [isOwnerFavourited, setIsOwnerFavourited] = useState(false);
   const [favLoading, setFavLoading] = useState(false);
   const [showRatingForm, setShowRatingForm] = useState(false);
+  // Incremented per profile request so responses for a previous id are ignored
+  const requestRef = useRef(0);
 
   const isOwnProfile = !!curId && String(curId) === String(id);
 
   useEffect(() => {
+    setError('');
+    setShowRatingForm(false);
     if (id) {
       fetchUserProfile();
     }
+    return () => {
+      requestRef.current += 1;
+    };
   }, [id]);
 
   // Initialize owner favourite state when viewing an owner and tenant is logged in
@@ -68,7 +65,7 @@ const UserProfile = () => {
       }
     };
     initFav();
-  }, [currentUser?.id, currentUser?.role, user?.role, id]);
+  }, [curId, currentUser?.role, user?.role, id]);
 
   const toggleOwnerFavourite = async () => {
     if (!currentUser) { navigate('/login'); return; }
@@ -92,20 +89,19 @@ const UserProfile = () => {
   };
 
   const fetchUserProfile = async () => {
+    const requestId = ++requestRef.current;
+    const isStale = () => requestId !== requestRef.current;
     try {
       setLoading(true);
-      
+      setError('');
+
       // Always fetch to get fresh data and rating summary
       const response = await getUser(id);
+      if (isStale()) return;
       const fetchedUser = response.data.user;
 
       // Set profile fields
       setUser(fetchedUser);
-      setEditForm({
-        name: fetchedUser?.name || '',
-        phone: fetchedUser?.phone || '',
-        profileImage: fetchedUser?.profileImage || ''
-      });
 
       // Rating summary
       if (response.data.ratingSummary) {
@@ -126,8 +122,10 @@ const UserProfile = () => {
         try {
           const ownerId = fetchedUser._id || fetchedUser.id;
           const propertiesResponse = await getPropertiesByOwner(ownerId);
+          if (isStale()) return;
           setProperties(propertiesResponse.data.properties || []);
         } catch (error) {
+          if (isStale()) return;
           console.error('Error fetching properties:', error);
           setProperties([]);
         }
@@ -136,45 +134,34 @@ const UserProfile = () => {
       }
 
     } catch (error) {
+      if (isStale()) return;
       setError('Failed to fetch user profile');
       console.error('Error fetching user profile:', error);
     } finally {
-      setLoading(false);
+      if (!isStale()) setLoading(false);
     }
   };
 
-  // Check visibility for tenant's phone number
-  useEffect(() => {
-    const check = async () => {
-      try {
-        if (!currentUser || !id) { setCanViewPhone(false); return; }
-        if (String(curId) === String(id)) { setCanViewPhone(true); return; }
-        if (user?.role !== 'tenant') { setCanViewPhone(false); return; }
-        const res = await canViewTenantContact(id);
-        setCanViewPhone(!!res.data?.canView);
-      } catch {
-        setCanViewPhone(false);
-      }
-    };
-    check();
-  }, [id, curId, user?.role]);
-
   // Check eligibility to rate when viewing someone else's profile
   useEffect(() => {
+    let cancelled = false;
     const check = async () => {
       try {
-        if (!currentUser || !id || (String(curId) === String(id))) {
+        if (!currentUser || !id || !user?.role || (String(curId) === String(id))) {
           setCanRate(false);
           return;
         }
         const ctx = (user?.role === 'owner') ? 'owner' : 'tenant';
         const res = await canRateUser(id, ctx);
-        setCanRate(!!res.data?.canRate);
+        if (!cancelled) setCanRate(!!res.data?.canRate);
       } catch (e) {
-        setCanRate(false);
+        if (!cancelled) setCanRate(false);
       }
     };
     check();
+    return () => {
+      cancelled = true;
+    };
     // re-check when target user role or id/currentUser changes
   }, [id, curId, user?.role]);
 
@@ -198,47 +185,6 @@ const UserProfile = () => {
     } finally {
       setRateLoading(false);
     }
-  };
-
-  const handleEditToggle = () => {
-    if (isEditing) {
-      // Cancel editing
-      setEditForm({
-        name: user.name || '',
-        phone: user.phone || '',
-        profileImage: user.profileImage || ''
-      });
-    }
-    setIsEditing(!isEditing);
-  };
-
-  const handleUpdateProfile = async (e) => {
-    e.preventDefault();
-    try {
-      setUpdateLoading(true);
-      const response = await updateAuthProfile(editForm);
-      setUser(response.user);
-      setIsEditing(false);
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      alert('Failed to update profile. Please try again.');
-    } finally {
-      setUpdateLoading(false);
-    }
-  };
-
-  const handleInputChange = (field, value) => {
-    setEditForm(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleImageFile = async (file) => {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const base64 = reader.result;
-      setEditForm(prev => ({ ...prev, profileImage: base64 }));
-    };
-    reader.readAsDataURL(file);
   };
 
   if (loading) {
@@ -296,6 +242,15 @@ const UserProfile = () => {
             Back
           </button>
           <div className="flex items-center gap-3">
+          {isOwnProfile && (
+            <button
+              onClick={() => navigate('/profile-settings')}
+              className="inline-flex items-center px-3 py-2 rounded-lg bg-white dark:bg-neutral-800 shadow-md hover:shadow-lg transition-shadow text-sm font-medium text-neutral-700 dark:text-neutral-200"
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Edit Profile
+            </button>
+          )}
           {!isOwnProfile && user?.role === 'owner' && currentUser?.role === 'tenant' && (
             <button
               onClick={toggleOwnerFavourite}
@@ -314,72 +269,6 @@ const UserProfile = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-start content-start">
           {/* Profile Card (Left) */}
           <div className="md:col-span-1 bg-white dark:bg-neutral-800 rounded-lg shadow-md p-6 min-w-0 z-10">
-            {isEditing ? (
-              <form onSubmit={handleUpdateProfile}>
-                <div className="flex items-start gap-6">
-                  <div className="shrink-0">
-                    <div className="w-24 h-24 bg-cyan-100 dark:bg-cyan-900 rounded-full flex items-center justify-center">
-                      {editForm.profileImage ? (
-                        <img
-                          src={editForm.profileImage}
-                          alt={user.name}
-                          className="w-24 h-24 rounded-full object-cover"
-                        />
-                      ) : (
-                        <User className="h-12 w-12 text-cyan-600 dark:text-cyan-400" />
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex-1 space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                        Name
-                      </label>
-                      <input
-                        type="text"
-                        value={editForm.name}
-                        onChange={(e) => handleInputChange('name', e.target.value)}
-                        className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                        Phone
-                      </label>
-                      <input
-                        type="tel"
-                        value={editForm.phone}
-                        onChange={(e) => handleInputChange('phone', e.target.value)}
-                        className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                        Profile Photo
-                      </label>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleImageFile(e.target.files?.[0])}
-                        className="block w-full text-sm text-neutral-700 dark:text-neutral-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-cyan-50 file:text-cyan-700 hover:file:bg-cyan-100 dark:file:bg-cyan-900/40 dark:file:text-cyan-300"
-                      />
-                      <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">Upload a JPG or PNG image. The new photo will replace your current one.</p>
-                    </div>
-                    <div className="flex gap-3">
-                      <button
-                        type="submit"
-                        disabled={updateLoading}
-                        className="flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white font-medium rounded-lg transition-colors"
-                      >
-                        <Save className="h-4 w-4 mr-2" />
-                        {updateLoading ? 'Saving...' : 'Save Changes'}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </form>
-            ) : (
               <div>
                 <div className="flex items-center gap-6 mb-4">
                   <div className="shrink-0">
@@ -404,7 +293,7 @@ const UserProfile = () => {
                         <Mail className="h-4 w-4 mr-2" />
                         {user.email}
                       </div>
-                      {user.phone && canViewPhone && (
+                      {user.phone && (
                         <div className="flex items-center text-neutral-600 dark:text-neutral-400">
                           <Phone className="h-4 w-4 mr-2" />
                           {user.phone}
@@ -449,21 +338,21 @@ const UserProfile = () => {
                     >
                       View Rating Details
                     </button>
-                    {/* Evaluate Owner Button (tenants viewing owners) */}
-                    {!isEditing && currentUser && String(curId) !== String(id) && currentUser.role === 'tenant' && user.role === 'owner' && (
+                    {/* Evaluate button (only when eligible to rate this user) */}
+                    {canRate && !isOwnProfile && (
                       <button
                         onClick={() => setShowRatingForm(!showRatingForm)}
                         className="inline-flex items-center justify-center rounded-md bg-cyan-600 hover:bg-cyan-700 text-white py-1.5 px-3 text-xs font-medium transition-colors"
                       >
                         <Star className="h-3 w-3 mr-1" />
-                        {showRatingForm ? 'Cancel Evaluation' : 'Evaluate Owner'}
+                        {showRatingForm ? 'Cancel Evaluation' : `Evaluate ${user.role === 'owner' ? 'Owner' : 'Tenant'}`}
                       </button>
                     )}
                   </div>
                 </div>
 
                 {/* Rating Form (only if eligible to rate and form is shown) */}
-                {!isEditing && currentUser && String(curId) !== String(id) && showRatingForm && (
+                {canRate && !isOwnProfile && showRatingForm && (
                   <div className="mt-6 border-t border-neutral-200 dark:border-neutral-700 pt-4">
                     <h3 className="text-sm font-semibold text-neutral-900 dark:text-white mb-2">
                       Evaluate {user.role === 'owner' ? 'Owner' : 'Tenant'}
@@ -503,7 +392,6 @@ const UserProfile = () => {
                   </div>
                 )}
               </div>
-            )}
           </div>
 
           {/* Right Column: Owner Details (Properties or Activity) */}
@@ -554,15 +442,20 @@ const UserProfile = () => {
                               	৳{property.price?.toLocaleString()}
                               <span className="text-xs font-normal text-neutral-500 dark:text-neutral-400">/month</span>
                             </div>
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                              property.availability === 'Available'
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                : property.availability === 'Booked'
-                                ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                                : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-                            }`}>
-                              {property.availability}
-                            </span>
+                            {(() => {
+                              const status = property.availabilityStatus || property.availability;
+                              return (
+                                <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                  status === 'Available'
+                                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                    : status === 'Booked'
+                                    ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                                    : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                                }`}>
+                                  {status}
+                                </span>
+                              );
+                            })()}
                           </div>
                         </div>
                       </div>

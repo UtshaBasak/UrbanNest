@@ -20,18 +20,23 @@ const OwnerProperties = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    let cancelled = false;
     const load = async () => {
       try {
         setLoading(true);
+        setError('');
         const res = await getPropertiesByOwner(id);
-        setProperties(res.data.properties || []);
+        if (!cancelled) setProperties(res.data.properties || []);
       } catch (e) {
-        setError('Failed to fetch properties');
+        if (!cancelled) setError('Failed to fetch properties');
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
     if (id) load();
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   return (
@@ -87,12 +92,12 @@ const OwnerProperties = () => {
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">
-                      ${property.price?.toLocaleString()}<span className="text-sm font-normal text-neutral-500 dark:text-neutral-400">/month</span>
+                      ৳{property.price?.toLocaleString()}<span className="text-sm font-normal text-neutral-500 dark:text-neutral-400">/month</span>
                     </div>
-                    {property.rating && (
+                    {property.totalReviews > 0 && typeof property.averageRating === 'number' && (
                       <div className="flex items-center">
                         <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                        <span className="ml-1 text-sm text-neutral-600 dark:text-neutral-400">{property.rating.toFixed(1)}</span>
+                        <span className="ml-1 text-sm text-neutral-600 dark:text-neutral-400">{property.averageRating.toFixed(1)}</span>
                       </div>
                     )}
                   </div>

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, MapPin } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { createProperty } from '../utils/api';
+import { compressImageFiles, MAX_IMAGES, MAX_TOTAL_IMAGE_CHARS, TOTAL_IMAGES_TOO_LARGE_MESSAGE, totalImageChars } from '../utils/image';
 
 
 const defaultForm = {
@@ -16,7 +17,6 @@ const defaultForm = {
   bedrooms: 0,
   bathrooms: 0,
   type: 'Apartment',
-  images: '', // comma-separated URLs for simplicity
   availabilityStatus: 'Available'
 };
 
@@ -28,10 +28,6 @@ const CreateProperty = () => {
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
   const [uploadedPreviews, setUploadedPreviews] = useState([]);
-  const handleOpenMapInNewTab = () => {
-    window.open('/map', '_blank');
-  };
-
 
   const isAllowed = user && (user.role === 'owner' || user.role === 'admin');
 
@@ -45,23 +41,22 @@ const CreateProperty = () => {
     setForm((prev) => ({ ...prev, [name]: value === '' ? '' : Number(value) }));
   };
 
-  const toBase64 = (file) => new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-
   const handleFiles = async (e) => {
     const files = Array.from(e.target.files || []);
+    e.target.value = '';
     if (!files.length) return;
     try {
       setUploading(true);
-      const bases = await Promise.all(files.map(toBase64));
-      setUploadedPreviews((prev) => [...prev, ...bases]);
+      setError('');
+      // Resize/re-encode as JPEG before storing as base64
+      const { images, errors } = await compressImageFiles(files, uploadedPreviews.length);
+      setUploadedPreviews((prev) => [...prev, ...images].slice(0, MAX_IMAGES));
+      const combined = [...uploadedPreviews, ...images].slice(0, MAX_IMAGES);
+      if (totalImageChars(combined) > MAX_TOTAL_IMAGE_CHARS) errors.push(TOTAL_IMAGES_TOO_LARGE_MESSAGE);
+      if (errors.length) setError(errors.join(' '));
     } catch (err) {
-      console.error('Image read failed', err);
-      setError('Failed to read selected images');
+      console.error('Image processing failed', err);
+      setError('Failed to process selected images');
     } finally {
       setUploading(false);
     }
@@ -73,10 +68,38 @@ const CreateProperty = () => {
 
 
 
+  // Mirror the backend validation rules so users get immediate feedback
+  const validate = () => {
+    const title = form.title.trim();
+    const description = form.description.trim();
+    if (title.length < 3 || title.length > 120) return 'Title must be between 3 and 120 characters';
+    if (description.length < 10 || description.length > 5000) return 'Description must be between 10 and 5000 characters';
+    if (!form.location.trim()) return 'Location is required';
+    const price = Number(form.price);
+    if (form.price === '' || !Number.isFinite(price) || price < 0) return 'Rent must be a number of 0 or more';
+    for (const [key, label] of [['bedrooms', 'Bedrooms'], ['bathrooms', 'Bathrooms']]) {
+      const n = Number(form[key]);
+      if (form[key] === '' || !Number.isInteger(n) || n < 0 || n > 50) return `${label} must be a whole number between 0 and 50`;
+    }
+    if (form.size !== '' && (!Number.isFinite(Number(form.size)) || Number(form.size) < 0)) return 'Size must be a number of 0 or more';
+    if (form.latitude !== '' && (!Number.isFinite(Number(form.latitude)) || Math.abs(Number(form.latitude)) > 90)) return 'Latitude must be a number between -90 and 90';
+    if (form.longitude !== '' && (!Number.isFinite(Number(form.longitude)) || Math.abs(Number(form.longitude)) > 180)) return 'Longitude must be a number between -180 and 180';
+    if (uploadedPreviews.length < 1) return 'Please upload at least one image';
+    if (uploadedPreviews.length > MAX_IMAGES) return `You can upload at most ${MAX_IMAGES} images`;
+    if (totalImageChars(uploadedPreviews) > MAX_TOTAL_IMAGE_CHARS) return TOTAL_IMAGES_TOO_LARGE_MESSAGE;
+    return '';
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isAllowed) {
       setError('Only owners or admins can create properties');
+      return;
+    }
+
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
@@ -85,13 +108,13 @@ const CreateProperty = () => {
       setError('');
 
       const payload = {
-        title: form.title,
-        description: form.description,
+        title: form.title.trim(),
+        description: form.description.trim(),
         price: Number(form.price),
-        location: form.location,
-        latitude: form.latitude ? Number(form.latitude) : undefined,
-        longitude: form.longitude ? Number(form.longitude) : undefined,
-        size: Number(form.size),
+        location: form.location.trim(),
+        latitude: form.latitude !== '' ? Number(form.latitude) : undefined,
+        longitude: form.longitude !== '' ? Number(form.longitude) : undefined,
+        size: form.size !== '' ? Number(form.size) : undefined,
         bedrooms: Number(form.bedrooms),
         bathrooms: Number(form.bathrooms),
         type: form.type,
@@ -110,7 +133,8 @@ const CreateProperty = () => {
       }
     } catch (err) {
       console.error('Create property failed:', err);
-      setError(err.message || 'Failed to create property');
+      const fieldErrors = Array.isArray(err.errors) ? err.errors.map((x) => x.msg).filter(Boolean) : [];
+      setError(fieldErrors.length ? fieldErrors.join('. ') : (err.message || 'Failed to create property'));
     } finally {
       setSubmitting(false);
     }
@@ -144,7 +168,7 @@ const CreateProperty = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-neutral-800 dark:text-neutral-200 mb-1">Title</label>
-              <input name="title" value={form.title} onChange={handleChange} required className="w-full p-2 rounded-sm border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-400 focus:outline-hidden focus:ring-2 focus:ring-cyan-600" />
+              <input name="title" value={form.title} onChange={handleChange} required minLength={3} maxLength={120} className="w-full p-2 rounded-sm border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-400 focus:outline-hidden focus:ring-2 focus:ring-cyan-600" />
             </div>
             <div>
               <label className="block text-sm text-neutral-800 dark:text-neutral-200 mb-1">Rent (per month)</label>
@@ -152,26 +176,26 @@ const CreateProperty = () => {
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm text-neutral-800 dark:text-neutral-200 mb-1">Description</label>
-              <textarea name="description" value={form.description} onChange={handleChange} rows={4} required className="w-full p-2 rounded-sm border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-400 focus:outline-hidden focus:ring-2 focus:ring-cyan-600" />
+              <textarea name="description" value={form.description} onChange={handleChange} rows={4} required minLength={10} maxLength={5000} className="w-full p-2 rounded-sm border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-400 focus:outline-hidden focus:ring-2 focus:ring-cyan-600" />
             </div>
             <div>
               <label className="block text-sm text-neutral-800 dark:text-neutral-200 mb-1">Location</label>
-              <input name="location" value={form.location} onChange={handleChange} placeholder="e.g., Dhaka, Bangladesh" className="w-full p-2 rounded-sm border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-400 focus:outline-hidden focus:ring-2 focus:ring-cyan-600" />
+              <input name="location" value={form.location} onChange={handleChange} required placeholder="e.g., Dhaka, Bangladesh" className="w-full p-2 rounded-sm border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-400 focus:outline-hidden focus:ring-2 focus:ring-cyan-600" />
             </div>
             {/* Property Location segment removed as requested */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm text-neutral-800 dark:text-neutral-200 mb-1">Latitude</label>
-                <input name="latitude" value={form.latitude} onChange={handleChange} placeholder="e.g., 23.8103" className="w-full p-2 rounded-sm border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-400 focus:outline-hidden focus:ring-2 focus:ring-cyan-600" />
+                <input type="number" step="any" min="-90" max="90" name="latitude" value={form.latitude} onChange={handleChange} placeholder="e.g., 23.8103" className="w-full p-2 rounded-sm border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-400 focus:outline-hidden focus:ring-2 focus:ring-cyan-600" />
               </div>
               <div>
                 <label className="block text-sm text-neutral-800 dark:text-neutral-200 mb-1">Longitude</label>
-                <input name="longitude" value={form.longitude} onChange={handleChange} placeholder="e.g., 90.4125" className="w-full p-2 rounded-sm border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-400 focus:outline-hidden focus:ring-2 focus:ring-cyan-600" />
+                <input type="number" step="any" min="-180" max="180" name="longitude" value={form.longitude} onChange={handleChange} placeholder="e.g., 90.4125" className="w-full p-2 rounded-sm border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-400 focus:outline-hidden focus:ring-2 focus:ring-cyan-600" />
               </div>
             </div>
             <div>
               <label className="block text-sm text-neutral-800 dark:text-neutral-200 mb-1">Size (sqft)</label>
-              <input type="number" min="0" name="size" value={form.size} onChange={handleNumber} required className="w-full p-2 rounded-sm border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-400 focus:outline-hidden focus:ring-2 focus:ring-cyan-600" />
+              <input type="number" min="0" name="size" value={form.size} onChange={handleNumber} className="w-full p-2 rounded-sm border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-400 focus:outline-hidden focus:ring-2 focus:ring-cyan-600" />
             </div>
             <div>
               <label className="block text-sm text-neutral-800 dark:text-neutral-200 mb-1">Type</label>
@@ -194,15 +218,15 @@ const CreateProperty = () => {
             </div>
             <div>
               <label className="block text-sm text-neutral-800 dark:text-neutral-200 mb-1">Bedrooms</label>
-              <input type="number" min={0} name="bedrooms" value={form.bedrooms} onChange={handleNumber} className="w-full p-2 rounded-sm border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-400 focus:outline-hidden focus:ring-2 focus:ring-cyan-600" />
+              <input type="number" min={0} max={50} step={1} name="bedrooms" value={form.bedrooms} onChange={handleNumber} className="w-full p-2 rounded-sm border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-400 focus:outline-hidden focus:ring-2 focus:ring-cyan-600" />
             </div>
             <div>
               <label className="block text-sm text-neutral-800 dark:text-neutral-200 mb-1">Bathrooms</label>
-              <input type="number" min={0} name="bathrooms" value={form.bathrooms} onChange={handleNumber} className="w-full p-2 rounded-sm border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-400 focus:outline-hidden focus:ring-2 focus:ring-cyan-600" />
+              <input type="number" min={0} max={50} step={1} name="bathrooms" value={form.bathrooms} onChange={handleNumber} className="w-full p-2 rounded-sm border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-400 focus:outline-hidden focus:ring-2 focus:ring-cyan-600" />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm text-neutral-800 dark:text-neutral-200 mb-1">Upload Images</label>
-              <input type="file" accept="image/*" multiple onChange={handleFiles} className="block w-full text-sm text-neutral-700 dark:text-neutral-200 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-cyan-50 file:text-cyan-700 dark:file:bg-neutral-700 dark:file:text-neutral-100 transition file:transition file:duration-200 hover:file:bg-cyan-100 dark:hover:file:bg-neutral-600" />
+              <label className="block text-sm text-neutral-800 dark:text-neutral-200 mb-1">Upload Images ({uploadedPreviews.length}/{MAX_IMAGES})</label>
+              <input type="file" accept="image/*" multiple onChange={handleFiles} disabled={uploading || uploadedPreviews.length >= MAX_IMAGES} className="block w-full text-sm text-neutral-700 dark:text-neutral-200 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-cyan-50 file:text-cyan-700 dark:file:bg-neutral-700 dark:file:text-neutral-100 transition file:transition file:duration-200 hover:file:bg-cyan-100 dark:hover:file:bg-neutral-600" />
               {uploadedPreviews.length > 0 && (
                 <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {uploadedPreviews.map((src, idx) => (

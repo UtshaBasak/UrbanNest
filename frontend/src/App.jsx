@@ -26,6 +26,7 @@ import Compare from './pages/Compare';
 import ProtectedRoute from './components/ProtectedRoute';
 import LeaveRequests from './pages/LeaveRequests';
 import LeaveRequestNew from './pages/LeaveRequestNew';
+import NotFound from './pages/NotFound';
 
 function App() {
   return (
@@ -134,6 +135,7 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </main>
           </div>

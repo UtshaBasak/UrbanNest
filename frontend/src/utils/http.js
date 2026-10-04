@@ -5,8 +5,12 @@ export const API_BASE_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/
 // Parse a fetch response, throwing an Error with the server's message on failure
 export const handleResponse = async (response) => {
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: `${response.status} ${response.statusText}` }));
-    throw new Error(error.message || `${response.status} ${response.statusText}`);
+    const body = await response.json().catch(() => ({ message: `${response.status} ${response.statusText}` }));
+    const err = new Error(body.message || `${response.status} ${response.statusText}`);
+    // Field-level validation errors ({ path, msg }) and HTTP status for callers
+    err.errors = body.errors;
+    err.status = response.status;
+    throw err;
   }
   return response.json();
 };

@@ -29,7 +29,7 @@ const Navbar = () => {
   // Close mobile menu when clicking outside
   useEffect(() => {
     const handleGlobalDown = (event) => {
-      if (isMenuOpen && !event.target.closest('.mobile-menu')) {
+      if (isMenuOpen && !event.target.closest('.mobile-menu') && !event.target.closest('.mobile-menu-toggle')) {
         setIsMenuOpen(false);
       }
       if (showProfileMenu && profileRef.current && !profileRef.current.contains(event.target)) {
@@ -121,6 +121,14 @@ const Navbar = () => {
     }
   };
 
+  const submitSearch = () => {
+    const q = searchQuery.trim();
+    if (!q) return;
+    navigate(`/properties?search=${encodeURIComponent(q)}`);
+    setShowSearchDropdown(false);
+    setIsMenuOpen(false);
+  };
+
   const handleSearchFocus = () => {
     setShowSearchDropdown(true);
   };
@@ -166,22 +174,14 @@ const Navbar = () => {
                   onFocus={handleSearchFocus}
                   onBlur={handleSearchBlur}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && searchQuery.trim()) {
-                      navigate(`/properties?search=${encodeURIComponent(searchQuery.trim())}`);
-                      setShowSearchDropdown(false);
-                    }
+                    if (e.key === 'Enter') submitSearch();
                   }}
                   className="w-48 lg:w-64 xl:w-72 pl-4 pr-10 py-2 bg-white/80 dark:bg-neutral-800/80 border border-white/30 dark:border-neutral-700/50 rounded-full text-sm placeholder-neutral-500 focus:outline-hidden focus:ring-2 focus:ring-primary-500/50 focus:border-transparent backdrop-blur-sm transition-all duration-200 text-neutral-900 dark:text-white"
                 />
                 <button
                   type="button"
                   aria-label="Search"
-                  onClick={() => {
-                    if (searchQuery.trim()) {
-                      navigate(`/properties?search=${encodeURIComponent(searchQuery.trim())}`);
-                      setShowSearchDropdown(false);
-                    }
-                  }}
+                  onClick={submitSearch}
                   className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-neutral-500 hover:text-cyan-600 dark:text-neutral-300 dark:hover:text-cyan-400 focus:outline-hidden"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -349,8 +349,9 @@ const Navbar = () => {
 
           {/* Mobile Menu Button */}
           <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden px-3 py-2 rounded-full text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 transition-all duration-200"
+            onClick={() => setIsMenuOpen((v) => !v)}
+            aria-expanded={isMenuOpen}
+            className="mobile-menu-toggle md:hidden px-3 py-2 rounded-full text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 transition-all duration-200"
           >
             {isMenuOpen ? 'Close' : 'Menu'}
           </button>
@@ -424,6 +425,11 @@ const Navbar = () => {
               <input
                 type="text"
                 placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') submitSearch();
+                }}
                 className="w-full pl-4 pr-4 py-3 bg-neutral-100 dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 focus:outline-hidden focus:ring-2 focus:ring-primary-500"
               />
             </div>
@@ -444,13 +450,6 @@ const Navbar = () => {
               className="px-4 py-3 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all duration-200 font-medium"
             >
               Properties
-            </Link>
-            <Link
-              to="/map"
-              onClick={() => setIsMenuOpen(false)}
-              className="px-4 py-3 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all duration-200 font-medium"
-            >
-              Map
             </Link>
             {user && (
               <Link

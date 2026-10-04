@@ -46,18 +46,68 @@ const SearchBar = ({ placeholder, value, onChange, onSearch }) => (
   </div>
 );
 
+// Static class maps so Tailwind can detect every class at build time
+const STAT_CARD_COLORS = {
+  blue: { border: 'border-blue-500', text: 'text-blue-500' },
+  green: { border: 'border-green-500', text: 'text-green-500' },
+  purple: { border: 'border-purple-500', text: 'text-purple-500' },
+  orange: { border: 'border-orange-500', text: 'text-orange-500' },
+  red: { border: 'border-red-500', text: 'text-red-500' },
+  yellow: { border: 'border-yellow-500', text: 'text-yellow-500' }
+};
+
 // StatCard component defined outside to prevent re-creation on each render
-const StatCard = ({ title, value, icon: Icon, color = 'blue' }) => (
-  <div className={`bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border-l-4 border-${color}-500`}>
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{title}</p>
-        <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
+const StatCard = ({ title, value, icon: Icon, color = 'blue' }) => {
+  const colorClasses = STAT_CARD_COLORS[color] || STAT_CARD_COLORS.blue;
+  return (
+    <div className={`bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border-l-4 ${colorClasses.border}`}>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{title}</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
+        </div>
+        <Icon className={`h-8 w-8 ${colorClasses.text}`} />
       </div>
-      <Icon className={`h-8 w-8 text-${color}-500`} />
     </div>
-  </div>
-);
+  );
+};
+
+// Pagination controls for admin tables
+const PaginationControls = ({ pagination, onPageChange }) => {
+  if (!pagination) return null;
+  const page = pagination.page || 1;
+  const pages = Math.max(pagination.pages || 1, 1);
+  return (
+    <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 dark:border-gray-700">
+      <button
+        onClick={() => onPageChange(page - 1)}
+        disabled={page <= 1}
+        className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        Prev
+      </button>
+      <span className="text-sm text-gray-600 dark:text-gray-400">
+        Page {page} of {pages}
+      </span>
+      <button
+        onClick={() => onPageChange(page + 1)}
+        disabled={page >= pages}
+        className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        Next
+      </button>
+    </div>
+  );
+};
+
+const PAGE_SIZE = 20;
+
+const TAB_FETCHERS = {
+  owners: getOwners,
+  tenants: getTenants,
+  properties: getAdminProperties,
+  reviews: getAdminReviews
+};
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -69,17 +119,31 @@ const AdminDashboard = () => {
     properties: [],
     reviews: []
   });
+  const [paginations, setPaginations] = useState({
+    owners: null,
+    tenants: null,
+    properties: null,
+    reviews: null
+  });
+  const [pages, setPages] = useState({
+    owners: 1,
+    tenants: 1,
+    properties: 1,
+    reviews: 1
+  });
   const [searchTerms, setSearchTerms] = useState({
     owners: '',
     tenants: '',
     properties: '',
     reviews: ''
   });
-  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Debounced search with useRef to maintain timeout reference
+  const searchTimeouts = React.useRef({});
 
   useEffect(() => {
     fetchAdminData();
-  }, [refreshKey]);
+  }, []);
 
   // Cleanup timeouts on unmount
   useEffect(() => {
@@ -90,28 +154,64 @@ const AdminDashboard = () => {
     };
   }, []);
 
+  // Fetch one tab's list with the given search term and page
+  const fetchTab = async (type, search = '', page = 1) => {
+    const params = { page, limit: PAGE_SIZE };
+    if (search.trim()) params.search = search.trim();
+    const result = await TAB_FETCHERS[type](params);
+    const items = result?.data?.[type] || [];
+    const pagination = result?.data?.pagination || null;
+
+    // If the page became empty (e.g. after deleting its last item), step back one page
+    if (items.length === 0 && page > 1) {
+      return fetchTab(type, search, page - 1);
+    }
+
+    setData(prev => ({ ...prev, [type]: items }));
+    setPaginations(prev => ({ ...prev, [type]: pagination }));
+    setPages(prev => ({ ...prev, [type]: page }));
+  };
+
+  const fetchStats = async () => {
+    try {
+      const statsRes = await getAdminStats();
+      setStats(statsRes?.data?.stats || {});
+    } catch (error) {
+      console.error('Error fetching admin stats:', error);
+    }
+  };
+
   const fetchAdminData = async () => {
     try {
       setLoading(true);
-      const [statsRes, ownersRes, tenantsRes, propertiesRes, reviewsRes] = await Promise.allSettled([
-        getAdminStats(),
-        getOwners(),
-        getTenants(),
-        getAdminProperties(),
-        getAdminReviews()
+      await Promise.allSettled([
+        fetchStats(),
+        ...Object.keys(TAB_FETCHERS).map((type) =>
+          fetchTab(type, searchTerms[type], pages[type]).catch((error) => {
+            console.error(`Error fetching ${type}:`, error);
+          })
+        )
       ]);
-
-      setStats(statsRes.status === 'fulfilled' ? statsRes.value.data.stats : {});
-      setData({
-        owners: ownersRes.status === 'fulfilled' ? ownersRes.value.data.owners : [],
-        tenants: tenantsRes.status === 'fulfilled' ? tenantsRes.value.data.tenants : [],
-        properties: propertiesRes.status === 'fulfilled' ? propertiesRes.value.data.properties : [],
-        reviews: reviewsRes.status === 'fulfilled' ? reviewsRes.value.data.reviews : []
-      });
-    } catch (error) {
-      console.error('Error fetching admin data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Refetch the given tab (and stats) keeping its current search term and page
+  const refreshTab = async (type) => {
+    await Promise.allSettled([
+      fetchStats(),
+      fetchTab(type, searchTerms[type], pages[type]).catch((error) => {
+        console.error(`Error refreshing ${type}:`, error);
+      })
+    ]);
+  };
+
+  const handlePageChange = async (type, page) => {
+    try {
+      await fetchTab(type, searchTerms[type], page);
+    } catch (error) {
+      console.error('Error changing page:', error);
     }
   };
 
@@ -119,7 +219,7 @@ const AdminDashboard = () => {
     if (window.confirm(`Are you sure you want to delete this ${userType}? This action cannot be undone and will delete all related data.`)) {
       try {
         await deleteUserById(userId);
-        setRefreshKey(prev => prev + 1);
+        await refreshTab(userType === 'owner' ? 'owners' : 'tenants');
         alert(`${userType} deleted successfully`);
       } catch (error) {
         console.error('Error deleting user:', error);
@@ -132,7 +232,7 @@ const AdminDashboard = () => {
     if (window.confirm('Are you sure you want to delete this property? This action cannot be undone and will delete all related bookings and reviews.')) {
       try {
         await deletePropertyById(propertyId);
-        setRefreshKey(prev => prev + 1);
+        await refreshTab('properties');
         alert('Property deleted successfully');
       } catch (error) {
         console.error('Error deleting property:', error);
@@ -145,7 +245,7 @@ const AdminDashboard = () => {
     if (window.confirm('Are you sure you want to delete this review? This action cannot be undone.')) {
       try {
         await deleteReviewById(reviewId, reviewType);
-        setRefreshKey(prev => prev + 1);
+        await refreshTab('reviews');
         alert('Review deleted successfully');
       } catch (error) {
         console.error('Error deleting review:', error);
@@ -155,81 +255,31 @@ const AdminDashboard = () => {
   };
 
   const handleSearch = async (searchType) => {
+    // Cancel any pending debounced search for this type
+    if (searchTimeouts.current[searchType]) {
+      clearTimeout(searchTimeouts.current[searchType]);
+    }
     try {
-      const searchTerm = searchTerms[searchType];
-      let result;
-      
-      switch (searchType) {
-        case 'owners':
-          result = await getOwners({ search: searchTerm });
-          setData(prev => ({ ...prev, owners: result.data.owners }));
-          break;
-        case 'tenants':
-          result = await getTenants({ search: searchTerm });
-          setData(prev => ({ ...prev, tenants: result.data.tenants }));
-          break;
-        case 'properties':
-          result = await getAdminProperties({ search: searchTerm });
-          setData(prev => ({ ...prev, properties: result.data.properties }));
-          break;
-        case 'reviews':
-          result = await getAdminReviews({ search: searchTerm });
-          setData(prev => ({ ...prev, reviews: result.data.reviews }));
-          break;
-      }
+      // A new search always starts at page 1
+      await fetchTab(searchType, searchTerms[searchType], 1);
     } catch (error) {
       console.error('Error searching:', error);
     }
   };
 
-  // Debounced search with useRef to maintain timeout reference
-  const searchTimeouts = React.useRef({});
-
   const updateSearchTerm = (type, value) => {
     setSearchTerms(prev => ({ ...prev, [type]: value }));
-    
+
     // Clear existing timeout for this search type
     if (searchTimeouts.current[type]) {
       clearTimeout(searchTimeouts.current[type]);
     }
 
-    // Set new timeout for debounced search
+    // Set new timeout for debounced search (works for owners, tenants, properties and reviews;
+    // an empty value refetches all data for that type)
     searchTimeouts.current[type] = setTimeout(async () => {
       try {
-        if (value.trim()) {
-          let result;
-          switch (type) {
-            case 'owners':
-              result = await getOwners({ search: value });
-              setData(prev => ({ ...prev, owners: result.data.owners }));
-              break;
-            case 'tenants':
-              result = await getTenants({ search: value });
-              setData(prev => ({ ...prev, tenants: result.data.tenants }));
-              break;
-            case 'properties':
-              result = await getAdminProperties({ search: value });
-              setData(prev => ({ ...prev, properties: result.data.properties }));
-              break;
-          }
-        } else {
-          // If search term is empty, refetch all data for that type
-          let result;
-          switch (type) {
-            case 'owners':
-              result = await getOwners();
-              setData(prev => ({ ...prev, owners: result.data.owners }));
-              break;
-            case 'tenants':
-              result = await getTenants();
-              setData(prev => ({ ...prev, tenants: result.data.tenants }));
-              break;
-            case 'properties':
-              result = await getAdminProperties();
-              setData(prev => ({ ...prev, properties: result.data.properties }));
-              break;
-          }
-        }
+        await fetchTab(type, value, 1);
       } catch (error) {
         console.error('Error searching:', error);
       }
@@ -288,7 +338,7 @@ const AdminDashboard = () => {
             <StatCard title="Total Owners" value={stats.totalOwners || 0} icon={UserCheck} color="green" />
             <StatCard title="Total Tenants" value={stats.totalTenants || 0} icon={UserX} color="purple" />
             <StatCard title="Total Properties" value={stats.totalProperties || 0} icon={Building2} color="orange" />
-            <StatCard title="Total Bookings" value={stats.totalBookings || 0} icon={Home} color="red" />
+            <StatCard title="Active Bookings" value={stats.totalBookings || 0} icon={Home} color="red" />
             <StatCard title="Total Reviews" value={stats.totalReviews || 0} icon={Star} color="yellow" />
           </div>
         )}
@@ -373,6 +423,7 @@ const AdminDashboard = () => {
                   </tbody>
                 </table>
               </div>
+              <PaginationControls pagination={paginations.owners} onPageChange={(page) => handlePageChange('owners', page)} />
             </div>
           </div>
         )}
@@ -453,6 +504,7 @@ const AdminDashboard = () => {
                   </tbody>
                 </table>
               </div>
+              <PaginationControls pagination={paginations.tenants} onPageChange={(page) => handlePageChange('tenants', page)} />
             </div>
           </div>
         )}
@@ -548,6 +600,7 @@ const AdminDashboard = () => {
                 </div>
               </div>
               </div>
+              <PaginationControls pagination={paginations.properties} onPageChange={(page) => handlePageChange('properties', page)} />
             </div>
           </div>
         )}
@@ -662,6 +715,7 @@ const AdminDashboard = () => {
                   </div>
                 </div>
               </div>
+              <PaginationControls pagination={paginations.reviews} onPageChange={(page) => handlePageChange('reviews', page)} />
             </div>
           </div>
         )}

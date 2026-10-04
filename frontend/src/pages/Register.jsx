@@ -76,8 +76,9 @@ const Register = () => {
 
     if (!formData.phone) {
       newErrors.phone = 'Phone number is required';
-    } else if (!/^[\+]?[0-9][\d]{0,15}$/.test(formData.phone.replace(/\s/g, ''))) {
-      newErrors.phone = 'Phone number is invalid';
+    } else if (!/^\+?\d{6,16}$/.test(formData.phone.replace(/[\s\-()[\]]/g, ''))) {
+      // Same rule as the backend: strip spaces/dashes/brackets, then 6-16 digits with optional +
+      newErrors.phone = 'Phone number must be 6-16 digits, optionally starting with +';
     }
 
     return newErrors;
@@ -100,20 +101,23 @@ const Register = () => {
       await register(registerData);
       navigate('/');
     } catch (error) {
-      // Try to parse backend validation errors
-      let backendErrors = {};
-      try {
-        const errObj = JSON.parse(error.message);
-        if (errObj.errors && Array.isArray(errObj.errors)) {
-          errObj.errors.forEach((err) => {
-            if (err.param) backendErrors[err.param] = err.msg;
-          });
-        }
-        if (errObj.message) backendErrors.submit = errObj.message;
-      } catch {
-        // Not JSON, fallback to string
-        backendErrors.submit = error.message || 'Registration failed. Please try again.';
+      // Map backend validation errors ({ path, msg }) onto the form fields
+      const backendErrors = {};
+      const fieldNames = ['name', 'email', 'password', 'phone'];
+      const unmatched = [];
+      if (Array.isArray(error.errors)) {
+        error.errors.forEach((err) => {
+          const field = err.path || err.param;
+          if (fieldNames.includes(field)) {
+            if (!backendErrors[field]) backendErrors[field] = err.msg;
+          } else if (err.msg) {
+            unmatched.push(err.msg);
+          }
+        });
       }
+      backendErrors.submit = unmatched.length
+        ? unmatched.join('. ')
+        : (error.message || 'Registration failed. Please try again.');
       setErrors(backendErrors);
     } finally {
       setLoading(false);

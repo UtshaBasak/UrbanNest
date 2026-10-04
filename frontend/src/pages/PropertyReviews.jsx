@@ -13,32 +13,47 @@ const PropertyReviews = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    let cancelled = false;
     const load = async () => {
       try {
         setLoading(true);
+        setError('');
+        setProperty(null);
         const [pRes, rRes] = await Promise.all([
           getProperty(id),
           getPropertyReviews(id, { limit: 100 }),
         ]);
+        if (cancelled) return;
         setProperty(pRes.data.property || null);
         const reviewsData = rRes.data.reviews || [];
         setReviews(reviewsData);
-        
-        // Calculate accurate average rating from all reviews
-        const totalRating = reviewsData.reduce((sum, review) => sum + review.rating, 0);
-        const averageRating = reviewsData.length > 0 ? totalRating / reviewsData.length : 0;
-        
-        setStats({ 
-          averageRating: averageRating, 
-          totalReviews: reviewsData.length 
-        });
+
+        // Prefer the backend aggregate; fall back to local computation only if it reports
+        // no reviews while reviews were actually returned
+        const backendStats = rRes.data.stats;
+        if (backendStats && !(Number(backendStats.totalReviews || 0) === 0 && reviewsData.length > 0)) {
+          setStats({
+            averageRating: Number(backendStats.averageRating) || 0,
+            totalReviews: Number(backendStats.totalReviews) || 0
+          });
+        } else {
+          const totalRating = reviewsData.reduce((sum, review) => sum + review.rating, 0);
+          const averageRating = reviewsData.length > 0 ? totalRating / reviewsData.length : 0;
+          setStats({
+            averageRating: averageRating,
+            totalReviews: reviewsData.length
+          });
+        }
       } catch (e) {
-        setError('Failed to load reviews');
+        if (!cancelled) setError('Failed to load reviews');
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
     if (id) load();
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   const renderStars = (rating) => {

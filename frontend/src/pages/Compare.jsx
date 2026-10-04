@@ -17,16 +17,25 @@ const propertyFields = [
   { label: 'Images', key: 'images', render: (imgs) => imgs && imgs.length ? <img src={imgs[0]} alt="img" className="h-20 w-32 object-cover rounded-sm" /> : '' },
 ];
 
+const readCompareIds = () => {
+  try {
+    const ids = JSON.parse(localStorage.getItem('compareProperties') || '[]');
+    return Array.isArray(ids) ? ids : [];
+  } catch {
+    return [];
+  }
+};
+
 export default function Compare() {
   const [compareIds, setCompareIds] = useState([]);
   const [properties, setProperties] = useState([null, null]);
 
   useEffect(() => {
-    const ids = JSON.parse(localStorage.getItem('compareProperties') || '[]');
-    setCompareIds(ids.slice(-2));
+    setCompareIds(readCompareIds().slice(-2));
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
     async function fetchProps() {
       if (compareIds.length === 0) return setProperties([null, null]);
       const results = await Promise.all(compareIds.map(async (id) => {
@@ -37,16 +46,20 @@ export default function Compare() {
           return null;
         }
       }));
-      setProperties([results[0] || null, results[1] || null]);
+      if (!cancelled) setProperties([results[0] || null, results[1] || null]);
     }
     fetchProps();
+    return () => {
+      cancelled = true;
+    };
   }, [compareIds]);
 
   const removeFromCompare = (idx) => {
-    const ids = JSON.parse(localStorage.getItem('compareProperties') || '[]');
-    ids.splice(idx, 1);
+    // idx refers to the displayed (last two) ids, so remove by id rather than position
+    const removeId = compareIds[idx];
+    const ids = readCompareIds().filter((pid) => pid !== removeId);
     localStorage.setItem('compareProperties', JSON.stringify(ids));
-    setCompareIds(ids);
+    setCompareIds(ids.slice(-2));
   };
 
   return (

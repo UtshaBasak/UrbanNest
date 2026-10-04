@@ -13,17 +13,19 @@ const LeaveRequestNew = () => {
   const [submitting, setSubmitting] = useState(false);
   const [bookings, setBookings] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
+  const [loaded, setLoaded] = React.useState(false);
 
   React.useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
-        const res = await getMyBookings();
+        const res = await getMyBookings({ status: 'approved', limit: 100 });
         setBookings(res?.data?.bookings || []);
       } catch (e) {
         console.error('Failed to load bookings', e);
       } finally {
         setLoading(false);
+        setLoaded(true);
       }
     };
     load();
@@ -33,16 +35,23 @@ const LeaveRequestNew = () => {
 
   const [selectedBookingId, setSelectedBookingId] = useState(bookingId || '');
 
-  // Ensure selection is set once bookings arrive; prefer query param if valid
+  // A ?bookingId= that isn't among the tenant's approved bookings must not be silently replaced
+  const queryBookingInvalid = loaded && !!bookingId && !approvedBookings.some(b => b._id === bookingId);
+
+  // Ensure selection is set once bookings arrive
   React.useEffect(() => {
-    if (!approvedBookings || approvedBookings.length === 0) return;
-    // If current selection is invalid or empty, set a sensible default
+    if (!loaded) return;
     const exists = selectedBookingId && approvedBookings.some(b => b._id === selectedBookingId);
-    const queryValid = bookingId && approvedBookings.some(b => b._id === bookingId);
-    if (!exists) {
-      setSelectedBookingId(queryValid ? bookingId : approvedBookings[0]._id);
+    if (exists) return;
+    if (bookingId) {
+      // Requested booking is not eligible: clear the selection and let the error message explain
+      if (selectedBookingId) setSelectedBookingId('');
+      return;
     }
-  }, [approvedBookings, bookingId, selectedBookingId]);
+    if (approvedBookings.length > 0) {
+      setSelectedBookingId(approvedBookings[0]._id);
+    }
+  }, [loaded, approvedBookings, bookingId, selectedBookingId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -88,6 +97,9 @@ const LeaveRequestNew = () => {
                 {(approvedBookings || []).length === 0 && (
                   <option value="">No active bookings</option>
                 )}
+                {(approvedBookings || []).length > 0 && !selectedBookingId && (
+                  <option value="">Select a booking</option>
+                )}
                 {(approvedBookings || []).map(b => (
                   <option key={b._id} value={b._id}>
                     {b.property?.title || 'Property'} ({new Date(b.startDate).toLocaleDateString()} - {new Date(b.endDate).toLocaleDateString()})
@@ -95,6 +107,11 @@ const LeaveRequestNew = () => {
                 ))}
               </select>
               <p className="text-xs text-neutral-500 mt-1">Only active (approved) bookings are eligible.</p>
+              {queryBookingInvalid && !selectedBookingId && (
+                <p className="text-sm text-red-600 dark:text-red-400 mt-2">
+                  The selected booking was not found among your active (approved) bookings, so a leave request can't be submitted for it.
+                </p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Message to Owner (optional)</label>

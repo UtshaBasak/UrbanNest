@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   Building2, 
@@ -21,6 +21,7 @@ import {
   getMyReviews,
   getMyPropertiesReviews,
   updateBookingStatus,
+  cancelBooking,
   deleteProperty,
   deleteBooking,
   deleteReview
@@ -36,6 +37,8 @@ const getBookingStatusColor = (status) => {
       return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300';
     case 'rejected':
       return 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300';
+    case 'cancelled':
+      return 'bg-neutral-200 text-neutral-700 dark:bg-neutral-700/60 dark:text-neutral-300';
     case 'completed':
       return 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300';
     default:
@@ -43,20 +46,45 @@ const getBookingStatusColor = (status) => {
   }
 };
 
+// Backend caps list `limit` at 100
+const LIST_LIMIT = 100;
+const DELETABLE_BOOKING_STATUSES = ['rejected', 'cancelled', 'completed'];
+
+const getValidTabs = (role) => (role === 'owner' ? ['properties', 'bookings', 'reviews'] : ['bookings', 'reviews']);
+
+const getTotal = (result, items) => result?.data?.pagination?.total ?? items.length;
+
+const TruncationNote = ({ shown, total }) => (
+  total > shown ? (
+    <p className="text-sm text-neutral-500 dark:text-neutral-400">
+      Showing first {shown} of {total}
+    </p>
+  ) : null
+);
+
 const Dashboard = () => {
   const { user } = useAuth();
-  
+
   // If user is admin, render admin dashboard
   if (user?.role === 'admin') {
     return <AdminDashboard />;
   }
-  
+
+  return <UserDashboard user={user} />;
+};
+
+const UserDashboard = ({ user }) => {
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(() => (user?.role === 'owner' ? 'properties' : 'bookings'));
   const [data, setData] = useState({
     properties: [],
     bookings: [],
     reviews: []
+  });
+  const [listTotals, setListTotals] = useState({
+    properties: 0,
+    bookings: 0,
+    reviews: 0
   });
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -70,8 +98,8 @@ const Dashboard = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tab = params.get('tab');
-    if (tab) setActiveTab(tab);
-  }, [location.search]);
+    if (tab && getValidTabs(user?.role).includes(tab)) setActiveTab(tab);
+  }, [location.search, user?.role]);
 
   useEffect(() => {
     if (user) {
@@ -85,41 +113,44 @@ const Dashboard = () => {
       const promises = [];
 
       if (user.role === 'owner') {
-        promises.push(getPropertiesByOwner(user._id || user.id));
-        promises.push(getMyBookings());
-        promises.push(getMyPropertiesReviews()); // Get reviews for owner's properties
-        promises.push(getMyBookings({ status: 'approved' })); // Get only approved bookings for count
+        promises.push(getPropertiesByOwner(user._id || user.id, { limit: LIST_LIMIT }));
+        promises.push(getMyBookings({ limit: LIST_LIMIT }));
+        promises.push(getMyPropertiesReviews({ limit: LIST_LIMIT })); // Get reviews for owner's properties
+        promises.push(getMyBookings({ status: 'approved', limit: 1 })); // Only the approved total is needed for the count
       } else {
-        promises.push(getMyBookings());
-        promises.push(getMyReviews()); // Get reviews written by tenant
-        promises.push(getMyBookings({ status: 'approved' })); // Get only approved bookings for count
+        promises.push(getMyBookings({ limit: LIST_LIMIT }));
+        promises.push(getMyReviews({ limit: LIST_LIMIT })); // Get reviews written by tenant
+        promises.push(getMyBookings({ status: 'approved', limit: 1 })); // Only the approved total is needed for the count
       }
 
       const results = await Promise.allSettled(promises);
-      
-      let properties = [];
-      let bookings = [];
-      let reviews = [];
-      let approvedBookings = [];
+      const valueOf = (i) => (results[i].status === 'fulfilled' ? results[i].value : null);
+      const isOwner = user.role === 'owner';
 
-      if (user.role === 'owner') {
-        properties = results[0].status === 'fulfilled' ? results[0].value.data.properties || [] : [];
-        bookings = results[1].status === 'fulfilled' ? results[1].value.data.bookings || [] : [];
-        reviews = results[2].status === 'fulfilled' ? results[2].value.data.reviews || [] : [];
-        approvedBookings = results[3].status === 'fulfilled' ? results[3].value.data.bookings || [] : [];
-      } else {
-        bookings = results[0].status === 'fulfilled' ? results[0].value.data.bookings || [] : [];
-        reviews = results[1].status === 'fulfilled' ? results[1].value.data.reviews || [] : [];
-        approvedBookings = results[2].status === 'fulfilled' ? results[2].value.data.bookings || [] : [];
-      }
+      const propertiesRes = isOwner ? valueOf(0) : null;
+      const bookingsRes = valueOf(isOwner ? 1 : 0);
+      const reviewsRes = valueOf(isOwner ? 2 : 1);
+      const approvedRes = valueOf(isOwner ? 3 : 2);
+
+      const properties = propertiesRes?.data?.properties || [];
+      const bookings = bookingsRes?.data?.bookings || [];
+      const reviews = reviewsRes?.data?.reviews || [];
+      const approvedBookings = approvedRes?.data?.bookings || [];
+
+      const totals = {
+        properties: getTotal(propertiesRes, properties),
+        bookings: getTotal(bookingsRes, bookings),
+        reviews: getTotal(reviewsRes, reviews)
+      };
 
       setData({ properties, bookings, reviews });
-      
-      // Calculate stats
+      setListTotals(totals);
+
+      // Calculate stats from backend pagination totals
       setStats({
-        totalProperties: properties.length,
-        totalBookings: approvedBookings.length, // Only count approved bookings
-        totalReviews: reviews.length
+        totalProperties: totals.properties,
+        totalBookings: getTotal(approvedRes, approvedBookings), // Only count approved bookings
+        totalReviews: totals.reviews
       });
 
     } catch (error) {
@@ -159,6 +190,19 @@ const Dashboard = () => {
     }
   };
 
+  const handleCancelBooking = async (bookingId) => {
+    if (window.confirm('Are you sure you want to cancel this booking?')) {
+      try {
+        await cancelBooking(bookingId);
+        fetchDashboardData(); // Refresh data
+        alert('Booking cancelled successfully');
+      } catch (error) {
+        console.error('Error cancelling booking:', error);
+        alert(error?.message || 'Failed to cancel booking');
+      }
+    }
+  };
+
   const handleDeleteBooking = async (bookingId) => {
     if (window.confirm('Are you sure you want to delete this booking?')) {
       try {
@@ -167,23 +211,20 @@ const Dashboard = () => {
         alert('Booking deleted successfully');
       } catch (error) {
         console.error('Error deleting booking:', error);
-        alert('Failed to delete booking');
+        alert(error?.message || 'Failed to delete booking');
       }
     }
   };
 
-  const getBookingStatusColor = (status) => {
-    switch (status) {
-      case 'approved':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-      case 'rejected':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
-    }
-  };
+  // Property ids the tenant has already reviewed (hide "Write Review" for these)
+  const reviewedPropertyIds = useMemo(() => {
+    if (user?.role !== 'tenant') return new Set();
+    return new Set(
+      data.reviews
+        .map((review) => String(review.property?._id || review.property || ''))
+        .filter(Boolean)
+    );
+  }, [data.reviews, user?.role]);
 
   const renderStars = (rating) => {
     return [...Array(5)].map((_, i) => (
@@ -313,7 +354,7 @@ const Dashboard = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
-                  My Bookings
+                  Active Bookings
                 </p>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-white">
                   {stats.totalBookings}
@@ -398,7 +439,9 @@ const Dashboard = () => {
                     </Link>
                   </div>
                 ) : (
-                  data.properties.map((property) => (
+                  <>
+                  <TruncationNote shown={data.properties.length} total={listTotals.properties} />
+                  {data.properties.map((property) => (
                     <div key={property._id} className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
@@ -446,7 +489,8 @@ const Dashboard = () => {
                         </div>
                       </div>
                     </div>
-                  ))
+                  ))}
+                  </>
                 )}
               </div>
             )}
@@ -462,7 +506,14 @@ const Dashboard = () => {
                     </p>
                   </div>
                 ) : (
-                  data.bookings.map((booking) => {
+                  <>
+                  <TruncationNote shown={data.bookings.length} total={listTotals.bookings} />
+                  {data.bookings.map((booking) => {
+                    const bookingPropertyId = String(booking.property?._id || booking.property || '');
+                    const canWriteReview = user?.role === 'tenant'
+                      && ['approved', 'completed'].includes(booking.status)
+                      && bookingPropertyId !== ''
+                      && !reviewedPropertyIds.has(bookingPropertyId);
                     return (
                       <div key={booking._id} className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
                         <div className="flex items-start justify-between">
@@ -514,24 +565,34 @@ const Dashboard = () => {
                           </div>
                           <div className="flex items-center gap-2">
                             {user?.role === 'tenant' && booking.status === 'approved' && (
-                              <>
-                                <Link
-                                  to={`/leave-requests/new?bookingId=${booking._id}`}
-                                  className="inline-flex items-center px-2.5 py-1.5 text-sm bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-600 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-md"
-                                  title="Request to leave this booking"
-                                >
-                                  <MessageSquare className="h-4 w-4 mr-1" />
-                                  Request Leave
-                                </Link>
-                                <Link
-                                  to={`/properties/${booking.property?._id}/reviews/new`}
-                                  className="inline-flex items-center px-2.5 py-1.5 text-sm bg-cyan-100 dark:bg-cyan-900 text-cyan-800 dark:text-cyan-100 border border-cyan-300 dark:border-cyan-600 hover:bg-cyan-200 dark:hover:bg-cyan-800 rounded-md"
-                                  title="Write a review for this property"
-                                >
-                                  <Star className="h-4 w-4 mr-1" />
-                                  Write Review
-                                </Link>
-                              </>
+                              <Link
+                                to={`/leave-requests/new?bookingId=${booking._id}`}
+                                className="inline-flex items-center px-2.5 py-1.5 text-sm bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-600 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-md"
+                                title="Request to leave this booking"
+                              >
+                                <MessageSquare className="h-4 w-4 mr-1" />
+                                Request Leave
+                              </Link>
+                            )}
+                            {canWriteReview && (
+                              <Link
+                                to={`/properties/${bookingPropertyId}/reviews/new`}
+                                className="inline-flex items-center px-2.5 py-1.5 text-sm bg-cyan-100 dark:bg-cyan-900 text-cyan-800 dark:text-cyan-100 border border-cyan-300 dark:border-cyan-600 hover:bg-cyan-200 dark:hover:bg-cyan-800 rounded-md"
+                                title="Write a review for this property"
+                              >
+                                <Star className="h-4 w-4 mr-1" />
+                                Write Review
+                              </Link>
+                            )}
+                            {user?.role === 'tenant' && ['pending', 'approved'].includes(booking.status) && (
+                              <button
+                                onClick={() => handleCancelBooking(booking._id)}
+                                className="inline-flex items-center px-2.5 py-1.5 text-sm text-red-700 dark:text-red-300 border border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
+                                title="Cancel Booking"
+                              >
+                                <XCircle className="h-4 w-4 mr-1" />
+                                Cancel
+                              </button>
                             )}
                             {user?.role === 'owner' && booking.status === 'pending' && (
                               <div className="flex gap-1">
@@ -551,19 +612,22 @@ const Dashboard = () => {
                                 </button>
                               </div>
                             )}
-                            {/* Delete booking button for authorized users */}
-                            <button
-                              onClick={() => handleDeleteBooking(booking._id)}
-                              className="p-1 text-red-600 hover:text-red-700"
-                              title="Delete Booking"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                            {/* Delete is only allowed for finished bookings */}
+                            {DELETABLE_BOOKING_STATUSES.includes(booking.status) && (
+                              <button
+                                onClick={() => handleDeleteBooking(booking._id)}
+                                className="p-1 text-red-600 hover:text-red-700"
+                                title="Delete Booking"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
                     );
-                  })
+                  })}
+                  </>
                 )}
               </div>
             )}
@@ -579,7 +643,9 @@ const Dashboard = () => {
                     </p>
                   </div>
                 ) : (
-                  data.reviews.map((review) => (
+                  <>
+                  <TruncationNote shown={data.reviews.length} total={listTotals.reviews} />
+                  {data.reviews.map((review) => (
                     <div key={review._id} className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -629,7 +695,8 @@ const Dashboard = () => {
                         )}
                       </div>
                     </div>
-                  ))
+                  ))}
+                  </>
                 )}
               </div>
             )}

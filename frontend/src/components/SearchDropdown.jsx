@@ -13,6 +13,7 @@ const SearchDropdown = ({ query, onClose }) => {
   });
 
   useEffect(() => {
+    let cancelled = false;
     const searchData = async () => {
       if (query.length < 2) {
         setResults({ properties: [], owners: [], tenants: [], loading: false });
@@ -27,23 +28,29 @@ const SearchDropdown = ({ query, onClose }) => {
           searchUsers(query)
         ]);
 
-        const owners = usersRes.data.users.filter(user => user.role === 'owner');
-        const tenants = usersRes.data.users.filter(user => user.role === 'tenant');
+        if (cancelled) return;
+        const users = usersRes?.data?.users || [];
+        const owners = users.filter(user => user.role === 'owner');
+        const tenants = users.filter(user => user.role === 'tenant');
 
         setResults({
-          properties: propertiesRes.data.properties || [],
+          properties: propertiesRes?.data?.properties || [],
           owners,
           tenants,
           loading: false
         });
       } catch (error) {
+        if (cancelled) return;
         console.error('Search error:', error);
         setResults({ properties: [], owners: [], tenants: [], loading: false });
       }
     };
 
     const timeoutId = setTimeout(searchData, 300);
-    return () => clearTimeout(timeoutId);
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
   }, [query]);
 
   const hasResults = results.properties.length > 0 || results.owners.length > 0 || results.tenants.length > 0;
@@ -74,7 +81,7 @@ const SearchDropdown = ({ query, onClose }) => {
                   className="flex items-center gap-3 px-3 py-3 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl transition-all duration-200"
                 >
                   <img
-                    src={property.images[0]}
+                    src={property.images?.[0]}
                     alt={property.title}
                     className="w-12 h-12 rounded-lg object-cover"
                   />

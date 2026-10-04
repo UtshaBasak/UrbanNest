@@ -150,7 +150,7 @@ const ProfileSettings = () => {
                   <button
                     onClick={async (e) => {
                       e.preventDefault();
-                      if (!window.confirm('Are you sure you want to delete your profile? This action can be reversed only by an admin.')) return;
+                      if (!window.confirm('Are you sure you want to delete your profile? This will permanently delete your account and all related data (properties, bookings, reviews and ratings). This cannot be undone.')) return;
                       try {
                         await deleteCurrentUser();
                         await logout();

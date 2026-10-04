@@ -14,11 +14,13 @@ const Notifications = () => {
   const [selectAllExplicit, setSelectAllExplicit] = useState(false);
   const [bulkLoading, setBulkLoading] = useState(false);
 
-  const load = async () => {
+  // `silent` refreshes (polling) don't toggle the loading state to avoid flicker
+  const load = async ({ silent = false } = {}) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await getMyNotifications({ unreadOnly });
       setItems(res.data.notifications || []);
+      setError('');
     } catch (e) {
       setError('Failed to load notifications');
       // eslint-disable-next-line no-console
@@ -30,7 +32,7 @@ const Notifications = () => {
 
   useEffect(() => {
     load();
-    timerRef.current = setInterval(load, POLL_MS);
+    timerRef.current = setInterval(() => load({ silent: true }), POLL_MS);
     return () => timerRef.current && clearInterval(timerRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unreadOnly]);

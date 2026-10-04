@@ -6,27 +6,34 @@ import { getMyFavourites, removeFavourite } from '../utils/api';
 
 const Favourites = () => {
   const { user } = useAuth();
+  const userId = user?._id || user?.id;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [owners, setOwners] = useState([]);
   const [properties, setProperties] = useState([]);
 
   useEffect(() => {
+    let cancelled = false;
     const load = async () => {
       try {
         setLoading(true);
+        setError('');
         const res = await getMyFavourites();
+        if (cancelled) return;
         const items = res.data?.favourites || [];
         setOwners(items.filter(i => i.itemType === 'owner').map(i => i.details).filter(Boolean));
         setProperties(items.filter(i => i.itemType === 'property').map(i => i.details).filter(Boolean));
       } catch (e) {
-        setError(e?.message || 'Failed to load favourites');
+        if (!cancelled) setError(e?.message || 'Failed to load favourites');
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
     if (user?.role === 'tenant') load();
-  }, [user?.role]);
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.role, userId]);
 
   const onRemove = async (itemType, itemId) => {
     try {

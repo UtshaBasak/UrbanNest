@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { MapPin, Star, Calendar, User, Phone, Mail, ArrowLeft, Heart, Share2, Pencil, Trash } from 'lucide-react';
+import { MapPin, Star, User, Phone, Mail, ArrowLeft, Heart, Share2, Pencil, Trash } from 'lucide-react';
 import { getProperty, createBooking, getPropertyReviews, deleteProperty, createReview, canReviewProperty, getMyFavourites, addFavourite, removeFavourite, getProperties } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -10,6 +10,7 @@ const PropertyDetails = () => {
   const { user } = useAuth();
   const [property, setProperty] = useState(null);
   const [reviews, setReviews] = useState([]);
+  const [reviewStats, setReviewStats] = useState({ total: null, average: null });
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [canReview, setCanReview] = useState(false);
@@ -28,10 +29,15 @@ const PropertyDetails = () => {
   const [relatedProperties, setRelatedProperties] = useState([]);
   const [relatedLoading, setRelatedLoading] = useState(false);
 
+  const userId = user?._id || user?.id;
+
   useEffect(() => {
+    // Ignore responses that arrive after the id changed or the page unmounted
+    let cancelled = false;
+    const isStale = () => cancelled;
     if (id) {
-      fetchPropertyDetails();
-      fetchPropertyReviews();
+      fetchPropertyDetails(isStale);
+      fetchPropertyReviews(isStale);
       // Add to recently viewed in localStorage
       try {
         const key = 'recentlyViewedProperties';
@@ -51,6 +57,9 @@ const PropertyDetails = () => {
         // ignore localStorage errors
       }
     }
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   // Photo viewer keyboard shortcuts
@@ -83,7 +92,7 @@ const PropertyDetails = () => {
       }
     };
     initFav();
-  }, [user?.role, user?._id, id]);
+  }, [user?.role, userId, id]);
 
   const handleToggleFavourite = async () => {
     if (!user) {
@@ -124,7 +133,7 @@ const PropertyDetails = () => {
       }
     };
     check();
-  }, [user?.role, user?._id, id]);
+  }, [user?.role, userId, id]);
 
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
@@ -138,6 +147,7 @@ const PropertyDetails = () => {
       const newReview = res.data?.review;
       if (newReview) {
         setReviews((prev) => [newReview, ...prev]);
+        setReviewStats((prev) => ({ ...prev, total: prev.total != null ? prev.total + 1 : null }));
         setReviewForm({ rating: 5, comment: '' });
         alert('Review submitted');
       }
@@ -173,35 +183,48 @@ const PropertyDetails = () => {
     }
   };
 
-  const fetchPropertyDetails = async () => {
+  const fetchPropertyDetails = async (isStale = () => false) => {
     try {
       setLoading(true);
+      setError('');
+      setProperty(null);
       const response = await getProperty(id);
+      if (isStale()) return;
       const propertyData = response.data.property;
       setProperty(propertyData);
       
       // Fetch related properties after getting property details
       if (propertyData) {
-        fetchRelatedProperties(propertyData);
+        fetchRelatedProperties(propertyData, isStale);
       }
     } catch (error) {
+      if (isStale()) return;
       setError('Failed to fetch property details');
       console.error('Error fetching property:', error);
     } finally {
-      setLoading(false);
+      if (!isStale()) setLoading(false);
     }
   };
 
-  const fetchPropertyReviews = async () => {
+  const fetchPropertyReviews = async (isStale = () => false) => {
     try {
+      setReviews([]);
+      setReviewStats({ total: null, average: null });
       const response = await getPropertyReviews(id);
+      if (isStale()) return;
       setReviews(response.data.reviews || []);
+      const stats = response.data.stats;
+      setReviewStats({
+        total: response.data.pagination?.total ?? null,
+        average: stats?.totalReviews > 0 ? stats.averageRating : null,
+      });
     } catch (error) {
+      if (isStale()) return;
       console.error('Error fetching reviews:', error);
     }
   };
 
-  const fetchRelatedProperties = async (currentProperty) => {
+  const fetchRelatedProperties = async (currentProperty, isStale = () => false) => {
     try {
       setRelatedLoading(true);
       
@@ -230,12 +253,14 @@ const PropertyDetails = () => {
         related = [...related, ...moreProperties].slice(0, 8);
       }
       
+      if (isStale()) return;
       setRelatedProperties(related.slice(0, 8));
     } catch (error) {
+      if (isStale()) return;
       console.error('Error fetching related properties:', error);
       setRelatedProperties([]);
     } finally {
-      setRelatedLoading(false);
+      if (!isStale()) setRelatedLoading(false);
     }
   };
 
@@ -296,6 +321,12 @@ const PropertyDetails = () => {
       />
     ));
   };
+
+  // Prefer backend totals over the length of the first page of reviews
+  const totalReviews = reviewStats.total ?? property?.totalReviews ?? reviews.length;
+  const averageRating = reviewStats.average
+    ?? (typeof property?.averageRating === 'number' && property.averageRating > 0 ? property.averageRating : null)
+    ?? (reviews.length > 0 ? reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length : 0);
 
   if (loading) {
     return (
@@ -439,14 +470,14 @@ const PropertyDetails = () => {
                     )}
                   </div>
                   {(() => {
-                    const avg = reviews.length > 0 ? Math.round(reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length) : 0;
+                    const avg = totalReviews > 0 ? Math.round(averageRating) : 0;
                     return (
                       <div className="flex items-center">
                         <div className="flex items-center mr-2">
                           {renderStars(avg)}
                         </div>
                         <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                          {reviews.length > 0 ? `(${reviews.length} reviews)` : 'No reviews yet'}
+                          {totalReviews > 0 ? `(${totalReviews} review${totalReviews === 1 ? '' : 's'})` : 'No reviews yet'}
                         </span>
                         <button
                           onClick={() => navigate(`/properties/${id}/reviews`)}
@@ -546,7 +577,7 @@ const PropertyDetails = () => {
               <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-md p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">
-                    Reviews ({reviews.length})
+                    Reviews ({totalReviews})
                   </h2>
                 </div>
                 <div className="space-y-4">
@@ -571,13 +602,13 @@ const PropertyDetails = () => {
                     </div>
                   ))}
                 </div>
-                {reviews.length > 3 && (
+                {totalReviews > 3 && (
                   <div className="mt-4 text-center">
                     <button
                       onClick={() => navigate(`/properties/${id}/reviews`)}
                       className="inline-flex items-center px-4 py-2 rounded-md bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-medium transition-colors"
                     >
-                      View All Reviews ({reviews.length})
+                      View All Reviews ({totalReviews})
                     </button>
                   </div>
                 )}
@@ -589,7 +620,7 @@ const PropertyDetails = () => {
           <div className="lg:col-span-1">
             <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-md p-6 sticky top-8 space-y-4">
               {/* Owner actions if current user owns this property */}
-              {user && (user.role === 'owner' || user.role === 'admin') && (String(property.owner?._id || property.owner) === String(user._id)) && (
+              {user && (user.role === 'owner' || user.role === 'admin') && (String(property.owner?._id || property.owner) === String(userId)) && (
                 <div>
                   <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-4">Manage Listing</h2>
                   <div className="flex gap-3">
@@ -764,7 +795,7 @@ const PropertyDetails = () => {
 
       {/* Booking Modal */}
       {showBookingModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-neutral-800 rounded-lg p-6 w-full max-w-md">
             <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">
               Request Booking

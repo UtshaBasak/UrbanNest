@@ -4,9 +4,30 @@ import { MapPin, Star, Filter, Search, Grid, List, ChevronDown } from 'lucide-re
 import { getProperties } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 
+// Sort options map to the backend's separate sortBy/sortOrder params
+const SORT_OPTIONS = {
+  newest: { sortBy: 'createdAt', sortOrder: 'desc' },
+  'price-asc': { sortBy: 'price', sortOrder: 'asc' },
+  'price-desc': { sortBy: 'price', sortOrder: 'desc' },
+};
+
+const PAGE_SIZE = 100; // backend caps limit at 100
+
+const DEFAULT_FILTERS = {
+  search: '',
+  minPrice: '',
+  maxPrice: '',
+  availabilityStatus: '',
+  type: '',
+  sort: 'newest',
+  limit: PAGE_SIZE,
+};
+
 const Properties = () => {
   const location = useLocation();
   const [properties, setProperties] = useState([]);
+  const [pagination, setPagination] = useState({ total: 0, page: 1, pages: 1 });
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -17,51 +38,48 @@ const Properties = () => {
     return params.get('search') || '';
   };
 
-  const [filters, setFilters] = useState({
-    search: getSearchParam(),
-    minPrice: '',
-    maxPrice: '',
-    availabilityStatus: '',
-    type: '',
-    sortBy: 'createdAt',
-    limit: 1000
-  });
-  const [draftFilters, setDraftFilters] = useState({
-    search: getSearchParam(),
-    minPrice: '',
-    maxPrice: '',
-    availabilityStatus: '',
-    type: '',
-    sortBy: 'createdAt',
-    limit: 1000
-  });
-  // Update filters if URL search param changes
+  const [filters, setFilters] = useState(() => ({ ...DEFAULT_FILTERS, search: getSearchParam() }));
+  const [draftFilters, setDraftFilters] = useState(() => ({ ...DEFAULT_FILTERS, search: getSearchParam() }));
+  // Update filters if URL search param changes (no-op when unchanged, to avoid a duplicate fetch)
   useEffect(() => {
     const urlSearch = getSearchParam();
-    setFilters((prev) => ({ ...prev, search: urlSearch }));
-    setDraftFilters((prev) => ({ ...prev, search: urlSearch }));
+    setFilters((prev) => (prev.search === urlSearch ? prev : { ...prev, search: urlSearch }));
+    setDraftFilters((prev) => (prev.search === urlSearch ? prev : { ...prev, search: urlSearch }));
+    setPage(1);
   }, [location.search]);
   const [viewMode, setViewMode] = useState('grid');
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
+    // Ignore responses from superseded requests
+    let cancelled = false;
+    const fetchProperties = async () => {
+      try {
+        setLoading(true);
+        setError('');
+        const { sort, ...rest } = filters;
+        const response = await getProperties({
+          ...rest,
+          ...(SORT_OPTIONS[sort] || SORT_OPTIONS.newest),
+          page,
+        });
+        if (cancelled) return;
+        setProperties(response.data.properties || []);
+        const pg = response.data.pagination || {};
+        setPagination({ total: pg.total || 0, page: pg.page || page, pages: pg.pages || 1 });
+      } catch (error) {
+        if (cancelled) return;
+        setError('Failed to fetch properties');
+        console.error('Error fetching properties:', error);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
     fetchProperties();
-  }, [filters]);
-
-  const fetchProperties = async () => {
-    try {
-      setLoading(true);
-      const response = await getProperties(filters);
-      setProperties(response.data.properties || []);
-    } catch (error) {
-      setError('Failed to fetch properties');
-      console.error('Error fetching properties:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  
+    return () => {
+      cancelled = true;
+    };
+  }, [filters, page]);
 
   const handleDraftChange = (key, value) => {
     setDraftFilters(prev => ({ ...prev, [key]: value }));
@@ -69,18 +87,13 @@ const Properties = () => {
 
   const applyFilters = () => {
     setFilters({ ...draftFilters });
+    setPage(1);
   };
 
   const clearFilters = () => {
-    const cleared = {
-      search: '',
-      minPrice: '',
-      maxPrice: '',
-      availabilityStatus: '',
-      sortBy: 'createdAt'
-    };
-    setDraftFilters(cleared);
-    setFilters(cleared);
+    setDraftFilters({ ...DEFAULT_FILTERS });
+    setFilters({ ...DEFAULT_FILTERS });
+    setPage(1);
   };
 
   const getAvailabilityColor = (status) => {
@@ -242,14 +255,13 @@ const Properties = () => {
                   Sort By
                 </label>
                 <select
-                  value={draftFilters.sortBy}
-                  onChange={(e) => handleDraftChange('sortBy', e.target.value)}
+                  value={draftFilters.sort}
+                  onChange={(e) => handleDraftChange('sort', e.target.value)}
                   className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                 >
-                  <option value="createdAt">Newest</option>
-                  <option value="price">Price: Low to High</option>
-                  <option value="-price">Price: High to Low</option>
-                  <option value="rating">Rating</option>
+                  <option value="newest">Newest</option>
+                  <option value="price-asc">Price: Low to High</option>
+                  <option value="price-desc">Price: High to Low</option>
                 </select>
               </div>
             </div>
@@ -371,6 +383,29 @@ const Properties = () => {
                 </div>
               </Link>
             ))}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {pagination.pages > 1 && (
+          <div className="flex items-center justify-center gap-4 mt-8">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="px-4 py-2 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+            >
+              Previous
+            </button>
+            <span className="text-sm text-neutral-600 dark:text-neutral-400">
+              Page {pagination.page} of {pagination.pages}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(pagination.pages, p + 1))}
+              disabled={page >= pagination.pages}
+              className="px-4 py-2 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+            >
+              Next
+            </button>
           </div>
         )}
       </div>

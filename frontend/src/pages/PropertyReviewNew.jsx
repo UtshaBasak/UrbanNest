@@ -37,7 +37,7 @@ const PropertyReviewNew = () => {
         const allowed = !!eligRes?.data?.canReview;
         setEligible(allowed);
         if (!allowed) {
-          setError('You are not eligible to review this property. You must have completed at least one booking.');
+          setError('You are not eligible to review this property. You need an approved or completed booking for this property that has already started.');
         }
       } catch (e) {
         setEligible(false);

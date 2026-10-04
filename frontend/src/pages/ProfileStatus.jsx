@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { getPropertiesByOwner, getMyBookings, getUserRatingSummary, getUser, listUserRatings } from '../utils/api';
+import { getPropertiesByOwner, getMyBookings, getUserRatingSummary, listUserRatings } from '../utils/api';
 import { Calendar, MapPin, ChevronRight, Star } from 'lucide-react';
 
 const Section = ({ title, children }) => (
@@ -18,13 +18,11 @@ const ProfileStatus = () => {
   const [ownerProps, setOwnerProps] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [ratingSummary, setRatingSummary] = useState({ owner: { avg: 0, count: 0 }, tenant: { avg: 0, count: 0 } });
-  const [ownerDetails, setOwnerDetails] = useState({}); // Cache for owner details by property ID
   const [userRatings, setUserRatings] = useState([]);
   const isOwner = user?.role === 'owner';
   const isAdmin = user?.role === 'admin';
 
-  // Filters and UI state
-  const [search, setSearch] = useState('');
+  // UI state
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Tenant payment form state
@@ -72,36 +70,17 @@ const ProfileStatus = () => {
       }
     };
     if (user) load();
-  }, [user, isOwner, isAdmin, search, refreshKey]);
-
-  // Fetch owner details for properties
-  const fetchOwnerDetails = async (propertyId, ownerId) => {
-    if (!ownerId || ownerDetails[propertyId]) return;
-    try {
-      const response = await getUser(ownerId);
-      if (response?.data?.user) {
-        setOwnerDetails(prev => ({ ...prev, [propertyId]: response.data.user }));
-      }
-    } catch (error) {
-      console.error('Failed to fetch owner details:', error);
-    }
-  };
-
-  // Fetch owner details for all bookings
-  useEffect(() => {
-    if (!isOwner && !isAdmin && bookings.length > 0) {
-      bookings.forEach(booking => {
-        const propertyId = booking.property?._id;
-        const ownerId = booking.property?.owner?._id || booking.property?.owner;
-        if (propertyId && ownerId) {
-          fetchOwnerDetails(propertyId, ownerId);
-        }
-      });
-    }
-  }, [bookings, isOwner, isAdmin]);
+  }, [user, isOwner, isAdmin, refreshKey]);
 
   // No category grouping per requirement
   const ownerList = useMemo(() => (isOwner ? ownerProps : []), [ownerProps, isOwner]);
+
+  // Only show ratings matching the summary shown (owner ratings for owners, tenant ratings for tenants)
+  const ratingContext = isOwner ? 'owner' : 'tenant';
+  const contextRatings = useMemo(
+    () => userRatings.filter(rating => rating.context === ratingContext),
+    [userRatings, ratingContext]
+  );
 
   if (loading) {
     return (
@@ -166,11 +145,11 @@ const ProfileStatus = () => {
                 )}
               </div>
               {/* Individual Ratings List */}
-              {userRatings.length === 0 ? (
+              {contextRatings.length === 0 ? (
                 <div className="text-neutral-500 dark:text-neutral-400">No individual ratings yet.</div>
               ) : (
                 <div className="space-y-4">
-                  {userRatings.map(rating => (
+                  {contextRatings.map(rating => (
                     <div key={rating._id} className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
                       <div className="flex items-center mb-2">
                         {[1,2,3,4,5].map(star => (

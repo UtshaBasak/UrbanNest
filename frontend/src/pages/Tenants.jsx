@@ -3,11 +3,17 @@ import { Link } from 'react-router-dom';
 import { getUsers, getMyBookings, createUserRating } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 
+const PAGE_SIZE = 12;
+// Bookings that make the other party eligible for rating
+const RATEABLE_BOOKING_STATUSES = ['approved', 'completed'];
+
 const Tenants = () => {
   const { user: currentUser } = useAuth();
   const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ total: 0, page: 1, pages: 1 });
   const [eligibleTenantIds, setEligibleTenantIds] = useState(() => new Set());
   const [rateModal, setRateModal] = useState({ open: false, target: null });
   const [ratingValue, setRatingValue] = useState(5);
@@ -15,39 +21,51 @@ const Tenants = () => {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     const load = async () => {
       try {
         setLoading(true);
-        const res = await getUsers({ role: 'tenant' });
+        setError('');
+        const res = await getUsers({ role: 'tenant', page, limit: PAGE_SIZE });
+        if (cancelled) return;
         setTenants(res.data.users || []);
+        const pg = res.data.pagination || {};
+        setPagination({ total: pg.total || 0, page: pg.page || page, pages: pg.pages || 1 });
       } catch (e) {
-        setError('Failed to fetch tenants');
+        if (!cancelled) setError('Failed to fetch tenants');
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
     load();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [page]);
 
-  // Load approved bookings for current owner to determine who can be rated
+  // Load approved/completed bookings for current owner to determine who can be rated
   useEffect(() => {
     const loadEligible = async () => {
       try {
-        if (!currentUser || currentUser.role !== 'owner') return;
-        const res = await getMyBookings({ status: 'approved', limit: 100 });
+        if (!currentUser || currentUser.role !== 'owner') {
+          setEligibleTenantIds(new Set());
+          return;
+        }
+        const res = await getMyBookings({ limit: 100 });
         const ids = new Set();
-        (res.data.bookings || []).forEach(b => {
-          if (b.tenant && (b.tenant._id || b.tenant)) {
-            ids.add(b.tenant._id || b.tenant);
-          }
-        });
+        (res.data.bookings || [])
+          .filter(b => RATEABLE_BOOKING_STATUSES.includes(b.status))
+          .forEach(b => {
+            const id = b.tenant?._id || b.tenant;
+            if (id) ids.add(String(id));
+          });
         setEligibleTenantIds(ids);
       } catch (e) {
         // silent fail; rating buttons simply won't show
       }
     };
     loadEligible();
-  }, [currentUser]);
+  }, [currentUser?._id, currentUser?.id, currentUser?.role]);
 
   const canRate = useMemo(() => currentUser && currentUser.role === 'owner', [currentUser]);
 
@@ -116,7 +134,7 @@ const Tenants = () => {
                   >
                     View Details
                   </Link>
-                  {canRate && eligibleTenantIds.has(t._id) && (
+                  {canRate && eligibleTenantIds.has(String(t._id)) && (
                     <button
                       onClick={() => openRate(t)}
                       className="inline-flex items-center justify-center rounded-md bg-cyan-600 hover:bg-cyan-700 text-white py-2 px-3 text-sm font-medium"
@@ -127,6 +145,29 @@ const Tenants = () => {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {!loading && pagination.pages > 1 && (
+          <div className="flex items-center justify-center gap-4 mt-8">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="inline-flex items-center justify-center rounded-md border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 py-2 px-4 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <span className="text-sm text-neutral-600 dark:text-neutral-400">
+              Page {pagination.page} of {pagination.pages}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(pagination.pages, p + 1))}
+              disabled={page >= pagination.pages}
+              className="inline-flex items-center justify-center rounded-md border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 py-2 px-4 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
           </div>
         )}
       </div>

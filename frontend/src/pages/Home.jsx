@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, MapPin, Star, Users, Building2, ChevronRight, Home as HomeIcon, Plus } from 'lucide-react';
+import { Search, MapPin, Star, Plus } from 'lucide-react';
 import { getProperties, getTopRatedProperties, getSuggestedProperties, getProperty } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 
 const Home = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const userId = user?._id || user?.id;
   const [featuredProperties, setFeaturedProperties] = useState([]);
   const [latestProperties, setLatestProperties] = useState([]);
   const [recentlyViewed, setRecentlyViewed] = useState([]);
@@ -60,17 +61,23 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
+    // Wait until auth has resolved so guests/users get the right list exactly once
+    if (authLoading) return undefined;
+    // Ignore responses that arrive after the user changed or the page unmounted
+    let cancelled = false;
     const fetchProperties = async () => {
       setLoading(true);
       try {
-        if (user) {
+        if (userId) {
           // Try to fetch suggested properties for logged-in user
           const response = await getSuggestedProperties();
-          const list = Array.isArray(response.data) ? response.data : [];
+          if (cancelled) return;
+          const list = Array.isArray(response.data) ? response.data : (response.data?.properties || []);
           setFeaturedProperties(list.slice(0, 6));
         } else {
           // Fallback: fetch top-rated properties for guests
           const response = await getTopRatedProperties({ limit: 100, minReviews: 1 });
+          if (cancelled) return;
           const list = Array.isArray(response.data?.properties) ? response.data.properties : [];
           if (list.length === 0) {
             setFeaturedProperties([]);
@@ -92,15 +99,18 @@ const Home = () => {
           setFeaturedProperties(maxRated);
         }
       } catch (error) {
+        if (cancelled) return;
         console.error('Error fetching featured/suggested properties:', error);
         setFeaturedProperties([]);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
     fetchProperties();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, userId]);
 
   useEffect(() => {
     const fetchLatest = async () => {

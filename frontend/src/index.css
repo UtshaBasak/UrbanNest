@@ -222,66 +222,139 @@
   background: #374151;
 }
 
-/* Smooth transitions */
-* {
-  @apply transition-colors duration-200;
+/* Smooth transitions (in the base layer so transition utilities can override it) */
+@layer base {
+  * {
+    @apply transition-colors duration-200;
+  }
 }
 
-/* Form inputs */
-.form-input {
-  @apply w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200;
-}
+/*
+  Reusable component classes live in the components layer so that utility
+  classes on the same element can override them (matching Tailwind v3).
+*/
+@layer components {
+  /* Form inputs */
+  .form-input {
+    @apply w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200;
+  }
 
-.dark .form-input {
-  @apply bg-neutral-800 border-neutral-600 text-white;
-}
+  .dark .form-input {
+    @apply bg-neutral-800 border-neutral-600 text-white;
+  }
 
-/* Buttons */
-.btn {
-  @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-hidden focus:ring-2 focus:ring-offset-2;
-}
+  /* Buttons */
+  .btn {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-hidden focus:ring-2 focus:ring-offset-2;
+  }
 
-.btn-primary {
-  @apply bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
-}
+  .btn-primary {
+    @apply bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
+  }
 
-.btn-secondary {
-  @apply bg-secondary-600 text-white hover:bg-secondary-700 focus:ring-secondary-500;
-}
+  .btn-secondary {
+    @apply bg-secondary-600 text-white hover:bg-secondary-700 focus:ring-secondary-500;
+  }
 
-.btn-outline {
-  @apply border border-neutral-300 text-neutral-700 hover:bg-neutral-50 focus:ring-neutral-500;
-}
+  .btn-outline {
+    @apply border border-neutral-300 text-neutral-700 hover:bg-neutral-50 focus:ring-neutral-500;
+  }
 
-.dark .btn-outline {
-  @apply border-neutral-600 text-neutral-300 hover:bg-neutral-800;
-}
+  .dark .btn-outline {
+    @apply border-neutral-600 text-neutral-300 hover:bg-neutral-800;
+  }
 
-/* Cards */
-.card {
-  @apply bg-white rounded-xl shadow-xs border border-neutral-200 transition-all duration-200;
-}
+  /* Cards */
+  .card {
+    @apply bg-white rounded-xl shadow-xs border border-neutral-200 transition-all duration-200;
+  }
 
-.dark .card {
-  @apply bg-neutral-800 border-neutral-700;
-}
+  .dark .card {
+    @apply bg-neutral-800 border-neutral-700;
+  }
 
-.card:hover {
-  @apply shadow-md transform -translate-y-1;
-}
+  .card:hover {
+    @apply shadow-md transform -translate-y-1;
+  }
 
-/* Loading spinner */
-.spinner {
-  @apply inline-block w-6 h-6 border-2 border-current border-t-transparent rounded-full animate-spin;
-}
+  /* Loading spinner */
+  .spinner {
+    @apply inline-block w-6 h-6 border-2 border-current border-t-transparent rounded-full animate-spin;
+  }
 
-/* Glass morphism effect */
-.glass {
-  @apply backdrop-blur-xl bg-white/70 border border-white/20;
-}
+  /* Glass morphism effect */
+  .glass {
+    @apply backdrop-blur-xl bg-white/70 border border-white/20;
+  }
 
-.dark .glass {
-  @apply bg-neutral-900/70 border-neutral-700/50;
+  .dark .glass {
+    @apply bg-neutral-900/70 border-neutral-700/50;
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-linear-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent;
+  }
+
+  .dark .gradient-text {
+    @apply from-primary-400 to-secondary-400;
+  }
+
+  /* Property status colors */
+  .status-available {
+    @apply bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-300;
+  }
+
+  .status-booked {
+    @apply bg-error-100 text-error-800 dark:bg-error-900/30 dark:text-error-300;
+  }
+
+  .status-not-available {
+    @apply bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-300;
+  }
+
+  .status-under-construction {
+    @apply bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-300;
+  }
+
+  .status-pre-booking-available {
+    @apply bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-300;
+  }
+
+  /* Rating stars */
+  .star-rating {
+    @apply inline-flex items-center gap-1;
+  }
+
+  .star {
+    @apply w-4 h-4 text-warning-500;
+  }
+
+  .star.filled {
+    @apply text-warning-500;
+  }
+
+  .star.empty {
+    @apply text-neutral-300 dark:text-neutral-600;
+  }
+
+  /* Form validation */
+  .form-error {
+    @apply text-error-600 text-sm mt-1;
+  }
+
+  .form-success {
+    @apply text-success-600 text-sm mt-1;
+  }
+
+  /* Focus visible for accessibility */
+  .focus-visible:focus-visible {
+    @apply outline-hidden ring-2 ring-primary-500 ring-offset-2;
+  }
+
+  .dark .focus-visible:focus-visible {
+    @apply ring-offset-neutral-800;
+  }
 }
 
 /* Dynamic island navbar */
@@ -298,15 +371,6 @@
   border: 1px solid rgba(99, 102, 241, 0.3);
 }
 
-/* Gradient text */
-.gradient-text {
-  @apply bg-linear-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent;
-}
-
-.dark .gradient-text {
-  @apply from-primary-400 to-secondary-400;
-}
-
 /* Custom animations */
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
@@ -317,57 +381,9 @@
   animation: float 3s ease-in-out infinite;
 }
 
-/* Property status colors */
-.status-available {
-  @apply bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-300;
-}
-
-.status-booked {
-  @apply bg-error-100 text-error-800 dark:bg-error-900/30 dark:text-error-300;
-}
-
-.status-not-available {
-  @apply bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-300;
-}
-
-/* Rating stars */
-.star-rating {
-  @apply inline-flex items-center gap-1;
-}
-
-.star {
-  @apply w-4 h-4 text-warning-500;
-}
-
-.star.filled {
-  @apply text-warning-500;
-}
-
-.star.empty {
-  @apply text-neutral-300 dark:text-neutral-600;
-}
-
-/* Form validation */
-.form-error {
-  @apply text-error-600 text-sm mt-1;
-}
-
-.form-success {
-  @apply text-success-600 text-sm mt-1;
-}
-
 /* Mobile responsive adjustments */
 @media (max-width: 768px) {
   .dynamic-island {
     @apply top-2 px-4 py-2;
   }
-}
-
-/* Focus visible for accessibility */
-.focus-visible:focus-visible {
-  @apply outline-hidden ring-2 ring-primary-500 ring-offset-2;
-}
-
-.dark .focus-visible:focus-visible {
-  @apply ring-offset-neutral-800;
 }
