@@ -14,6 +14,7 @@ Browse and compare homes, request bookings, leave reviews, rate owners and tenan
 ![React](https://img.shields.io/badge/react-19-61DAFB?logo=react&logoColor=black)
 ![MongoDB](https://img.shields.io/badge/mongodb-mongoose%209-47A248?logo=mongodb&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/tailwind-4-06B6D4?logo=tailwindcss&logoColor=white)
+[![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
 </div>
 
@@ -29,8 +30,8 @@ Browse and compare homes, request bookings, leave reviews, rate owners and tenan
 - [Available Scripts](#available-scripts)
 - [API Overview](#api-overview)
 - [Security](#security)
-- [Deployment](#deployment)
 - [Contributing](#contributing)
+- [License](#license)
 - [Author](#author)
 
 ## Features
@@ -219,15 +220,6 @@ All endpoints are prefixed with `/api`. Protected routes need the `token` cookie
 - Public registration can only create `tenant` or `owner` accounts. Admin accounts are created through `npm run create-admin`.
 - CodeQL scans run on every push, and Dependabot keeps dependencies up to date.
 
-## Deployment
-
-UrbanNest can run on any Node host. A typical setup on [Render](https://render.com/):
-
-1. **API (Web Service).** Root directory `backend`, build command `npm install`, start command `npm start`. Set `NODE_ENV=production`, `MONGO_URI`, `JWT_SECRET` and `CLIENT_URL`.
-2. **Frontend (Static Site).** Root directory `frontend`, build command `npm install && npm run build`, publish directory `dist`.
-   - **Same-origin setup (recommended):** add a rewrite rule that sends `/api/*` to the API service, and a catch-all rule that sends `/*` to `/index.html` for client-side routing.
-   - **Cross-origin setup:** set `VITE_API_URL` to the API URL, and set `COOKIE_SAME_SITE=none` on the API.
-
 ## Contributing
 
 Contributions, issues and feature requests are welcome.
@@ -237,6 +229,10 @@ Contributions, issues and feature requests are welcome.
 3. Commit your changes: `git commit -m "Add amazing feature"`.
 4. Push the branch: `git push origin feature/amazing-feature`.
 5. Open a pull request.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
 
 ## Author
 

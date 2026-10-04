@@ -2,6 +2,7 @@
   "name": "urbannest",
   "version": "1.0.0",
   "description": "UrbanNest - a full-stack MERN property rental platform connecting owners and tenants",
+  "license": "MIT",
   "private": true,
   "repository": {
     "type": "git",

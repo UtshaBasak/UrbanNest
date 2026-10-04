@@ -2,6 +2,7 @@
   "name": "urbannest-backend",
   "version": "1.0.0",
   "description": "REST API for UrbanNest - Express, MongoDB and JWT authentication",
+  "license": "MIT",
   "private": true,
   "main": "server.js",
   "type": "module",

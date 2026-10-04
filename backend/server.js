@@ -26,7 +26,7 @@ connectDB();
 
 const app = express();
 
-// Behind a reverse proxy (e.g. Render) trust the first hop so rate limiting
+// Behind a reverse proxy (load balancer / hosting platform) trust the first hop so rate limiting
 // and HTTPS detection use the real client information
 if (process.env.NODE_ENV === 'production') {
   app.set('trust proxy', 1);
@@ -53,8 +53,7 @@ const allowedOrigins = [
   'http://localhost:5173',
   'http://127.0.0.1:5173',
   'http://localhost:3000',
-  'http://127.0.0.1:3000',
-  'https://urbannest-frontend-bt7n.onrender.com'
+  'http://127.0.0.1:3000'
 ].filter(Boolean);
 
 app.use(cors({

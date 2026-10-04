@@ -2,6 +2,7 @@
   "name": "urbannest-frontend",
   "version": "1.0.0",
   "description": "React client for UrbanNest - property rental platform",
+  "license": "MIT",
   "private": true,
   "engines": {
     "node": ">=20.19"
