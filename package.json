@@ -21,6 +21,6 @@
     "create-admin": "npm run create-admin --prefix backend"
   },
   "devDependencies": {
-    "concurrently": "^9.2.0"
+    "concurrently": "^10.0.5"
   }
 }
