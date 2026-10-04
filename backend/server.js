@@ -40,8 +40,8 @@ app.use(helmet({
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-  standardHeaders: true,
+  limit: 100, // Limit each IP to 100 requests per windowMs
+  standardHeaders: 'draft-8',
   legacyHeaders: false,
   message: { message: 'Too many requests from this IP, please try again later.' }
 });
@@ -112,7 +112,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // 404 handler
-app.use('*', (req, res) => {
+app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 

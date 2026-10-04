@@ -6,7 +6,7 @@
   "main": "server.js",
   "type": "module",
   "engines": {
-    "node": ">=18"
+    "node": ">=20.19"
   },
   "scripts": {
     "start": "node server.js",

@@ -42,10 +42,10 @@ const bookingSchema = new mongoose.Schema({
 });
 
 // Validate date range
-bookingSchema.pre('validate', function(next) {
+bookingSchema.pre('validate', function() {
   // Ensure end strictly after start
   if (this.startDate >= this.endDate) {
-    return next(new Error('End date must be after start date'));
+    throw new Error('End date must be after start date');
   }
 
   // Allow same-day bookings by comparing date-only (truncate time)
@@ -54,9 +54,8 @@ bookingSchema.pre('validate', function(next) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   if (startDay < today) {
-    return next(new Error('Start date cannot be in the past'));
+    throw new Error('Start date cannot be in the past');
   }
-  next();
 });
 
 export default mongoose.model('Booking', bookingSchema);

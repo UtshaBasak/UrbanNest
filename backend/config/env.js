@@ -6,8 +6,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Load backend/.env first, then fall back to a project-root .env.
 // dotenv never overrides variables that are already set, so the first match wins.
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../.env'), quiet: true });
+dotenv.config({ path: path.resolve(__dirname, '../../.env'), quiet: true });
 
 const REQUIRED_VARS = ['MONGO_URI', 'JWT_SECRET'];
 
