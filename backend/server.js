@@ -1,11 +1,10 @@
+import { assertRequiredEnv } from './config/env.js';
 import express from 'express';
-import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv';
 
 // Import routes
 import authRoutes from './routes/authRoutes.js';
@@ -21,13 +20,17 @@ import adminRoutes from './routes/adminRoutes.js';
 // Import config
 import connectDB from './config/db.js';
 
-// Load environment variables from root directory
-dotenv.config({ path: '../.env' });
-
-// Connect to database
+// Fail fast on missing configuration, then connect to the database
+assertRequiredEnv();
 connectDB();
 
 const app = express();
+
+// Behind a reverse proxy (e.g. Render) trust the first hop so rate limiting
+// and HTTPS detection use the real client information
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
 
 // Security middleware
 app.use(helmet({
@@ -38,13 +41,15 @@ app.use(helmet({
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // Limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.'
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many requests from this IP, please try again later.' }
 });
 app.use('/api/auth', limiter);
 
-// CORS configuration (support common dev origins and env override)
+// CORS configuration (CLIENT_URL may hold a comma-separated list of origins)
 const allowedOrigins = [
-  process.env.CLIENT_URL,
+  ...(process.env.CLIENT_URL || '').split(',').map((url) => url.trim()),
   'http://localhost:5173',
   'http://127.0.0.1:5173',
   'http://localhost:3000',
@@ -106,23 +111,24 @@ app.get('/api/health', (req, res) => {
   res.json({ message: 'Server is running', timestamp: new Date().toISOString() });
 });
 
-// Global error handler
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ 
-    message: 'Something went wrong!', 
-    error: process.env.NODE_ENV === 'development' ? err.message : {} 
-  });
-});
-
 // 404 handler
 app.use('*', (req, res) => {
   res.status(404).json({ message: 'Route not found' });
+});
+
+// Global error handler (must be registered last)
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(err.status || 500).json({
+    message: err.status ? err.message : 'Something went wrong!',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
 });
 
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });

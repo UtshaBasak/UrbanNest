@@ -70,7 +70,7 @@ const Favourites = () => {
                 {owners.map(o => (
                   <div key={o._id} className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
                     <div className="flex items-center gap-3">
-                      <img src={o.profileImage || '/api/placeholder/80/80'} alt={o.name} className="w-12 h-12 rounded-full object-cover" onError={(e)=>{e.currentTarget.src='/api/placeholder/80/80';}} />
+                      <img src={o.profileImage || '/placeholder.svg'} alt={o.name} className="w-12 h-12 rounded-full object-cover" onError={(e)=>{e.currentTarget.src='/placeholder.svg';}} />
                       <div>
                         <Link to={`/users/${o._id}`} className="font-medium hover:underline text-neutral-900 dark:text-white">{o.name}</Link>
                         {typeof o.averageRating === 'number' && (
@@ -99,7 +99,7 @@ const Favourites = () => {
                 {properties.map(p => (
                   <div key={p._id} className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
                     <Link to={`/properties/${p._id}`}>
-                      <img src={p.images?.[0] || '/api/placeholder/400/240'} alt={p.title} className="w-full h-40 object-cover rounded-md" onError={(e)=>{e.currentTarget.src='/api/placeholder/400/240';}} />
+                      <img src={p.images?.[0] || '/placeholder.svg'} alt={p.title} className="w-full h-40 object-cover rounded-md" onError={(e)=>{e.currentTarget.src='/placeholder.svg';}} />
                       <div className="mt-3">
                         <h3 className="font-semibold line-clamp-1 text-neutral-900 dark:text-white">{p.title}</h3>
                         <p className="text-sm text-neutral-600 dark:text-neutral-400 line-clamp-1">{p.location}</p>

@@ -403,7 +403,7 @@ const Dashboard = () => {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
                           <img
-                            src={property.images?.[0] || '/api/placeholder/100/100'}
+                            src={property.images?.[0] || '/placeholder.svg'}
                             alt={property.title}
                             className="w-16 h-16 object-cover rounded-lg"
                           />

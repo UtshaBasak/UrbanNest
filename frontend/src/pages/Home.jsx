@@ -217,7 +217,7 @@ const Home = () => {
                 >
                   <div className="relative overflow-hidden rounded-t-xl">
                     <img
-                      src={property.images?.[0] || '/api/placeholder/400/300'}
+                      src={property.images?.[0] || '/placeholder.svg'}
                       alt={property.title}
                       className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
                     />
@@ -335,7 +335,7 @@ const Home = () => {
                 >
                   <div className="relative overflow-hidden rounded-t-xl">
                     <img
-                      src={property.images?.[0] || '/api/placeholder/400/300'}
+                      src={property.images?.[0] || '/placeholder.svg'}
                       alt={property.title}
                       className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
                     />
@@ -450,7 +450,7 @@ const Home = () => {
                 >
                   <div className="relative overflow-hidden rounded-t-xl">
                     <img
-                      src={property.images?.[0] || '/api/placeholder/400/300'}
+                      src={property.images?.[0] || '/placeholder.svg'}
                       alt={property.title}
                       className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
                     />

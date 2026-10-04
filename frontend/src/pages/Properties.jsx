@@ -296,7 +296,7 @@ const Properties = () => {
               >
                 <div className={(viewMode === 'list' ? 'w-1/3 ' : 'w-full ') + 'relative'}>
                   <img
-                    src={property.images?.[0] || '/api/placeholder/400/300'}
+                    src={property.images?.[0] || '/placeholder.svg'}
                     alt={property.title}
                     className={`object-cover ${viewMode === 'list' ? 'h-full' : 'h-48'} w-full`}
                   />

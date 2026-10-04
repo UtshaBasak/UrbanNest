@@ -25,7 +25,7 @@ const registerValidation = [
     .withMessage('Please enter a valid email'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
   body('phone').isMobilePhone().withMessage('Please enter a valid phone number'),
-  body('role').optional().isIn(['admin', 'owner', 'tenant']).withMessage('Invalid role')
+  body('role').optional().isIn(['owner', 'tenant']).withMessage('Invalid role')
 ];
 
 const loginValidation = [

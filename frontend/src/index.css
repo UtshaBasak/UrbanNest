@@ -1,9 +1,6 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-/*
-NOTE: If you see 'Unknown at rule @tailwind' or '@apply' errors, ensure your build process uses PostCSS with Tailwind CSS plugin. These are not standard CSS and require Tailwind/PostCSS setup. See https://tailwindcss.com/docs/installation for setup help.
-*/
 
 /* Hide all scrollbars (WebKit, Firefox, IE/Edge) */
 * {
@@ -130,32 +127,6 @@ NOTE: If you see 'Unknown at rule @tailwind' or '@apply' errors, ensure your bui
 
 .card:hover {
   @apply shadow-md transform -translate-y-1;
-}
-
-/* Leaflet map styles */
-.leaflet-container {
-  @apply rounded-lg;
-  width: 100% !important;
-  height: 100% !important;
-  position: relative !important;
-  z-index: 1;
-}
-
-.leaflet-container.leaflet-touch-drag.leaflet-touch-zoom {
-  position: relative !important;
-}
-
-.leaflet-popup-content-wrapper {
-  @apply rounded-lg;
-}
-
-.dark .leaflet-popup-content-wrapper {
-  background-color: #262626;
-  color: white;
-}
-
-.dark .leaflet-popup-tip {
-  background-color: #262626;
 }
 
 /* Loading spinner */

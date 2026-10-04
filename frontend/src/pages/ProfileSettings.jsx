@@ -188,7 +188,7 @@ const ProfileSettings = () => {
                 {ownerProps.map(p => (
                   <div key={p._id} className="flex items-center justify-between border border-neutral-200 dark:border-neutral-700 rounded-lg p-3">
                     <div className="flex items-center space-x-3">
-                      <img src={p.images?.[0] || '/api/placeholder/80/80'} alt={p.title} className="w-14 h-14 object-cover rounded" />
+                      <img src={p.images?.[0] || '/placeholder.svg'} alt={p.title} className="w-14 h-14 object-cover rounded" />
                       <div>
                         <div className="font-medium text-neutral-900 dark:text-white">{p.title}</div>
                         <div className="text-sm text-neutral-600 dark:text-neutral-400">{p.location}</div>

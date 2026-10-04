@@ -1,3 +1,9 @@
+import { validationResult } from 'express-validator';
+import Property from '../models/Property.js';
+import User from '../models/User.js';
+import Booking from '../models/Booking.js';
+import Review from '../models/Review.js';
+
 // @desc Get suggested properties for a user based on favorites and bookings
 // @route GET /api/properties/suggested
 // @access Private
@@ -77,11 +83,6 @@ export const getSuggestedProperties = async (req, res) => {
     res.status(500).json({ message: 'Server error while fetching suggested properties' });
   }
 };
-import { validationResult } from 'express-validator';
-import Property from '../models/Property.js';
-import User from '../models/User.js';
-import Booking from '../models/Booking.js';
-import Review from '../models/Review.js';
 
 // @desc Get all properties with filters
 // @route GET /api/properties

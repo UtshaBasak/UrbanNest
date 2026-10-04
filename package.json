@@ -1,34 +1,26 @@
 {
   "name": "urbannest",
+  "version": "1.0.0",
+  "description": "UrbanNest - a full-stack MERN property rental platform connecting owners and tenants",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/UtshaBasak/UrbanNest.git"
   },
-  "dependencies": {
-    "lucide-react": "^0.344.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+  "author": "Utsha Basak",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "install:all": "npm install && npm install --prefix backend && npm install --prefix frontend",
+    "dev": "concurrently -n api,web -c blue,green \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "build": "npm run build --prefix frontend",
+    "start": "npm start --prefix backend",
+    "create-admin": "npm run create-admin --prefix backend"
   },
   "devDependencies": {
-    "@eslint/js": "^9.9.1",
-    "@types/react": "^18.3.5",
-    "@types/react-dom": "^18.3.0",
-    "@vitejs/plugin-react": "^4.7.0",
-    "autoprefixer": "^10.4.18",
-    "concurrently": "^9.2.0",
-    "eslint": "^9.9.1",
-    "eslint-plugin-react-hooks": "^5.1.0-rc.0",
-    "eslint-plugin-react-refresh": "^0.4.11",
-    "globals": "^15.9.0",
-    "postcss": "^8.5.28",
-    "tailwindcss": "^3.4.1",
-    "typescript": "^5.5.3",
-    "typescript-eslint": "^8.3.0",
-    "vite": "^7.3.6"
+    "concurrently": "^9.2.0"
   }
 }

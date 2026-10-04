@@ -1,3 +1,11 @@
+import mongoose from 'mongoose';
+import User from '../models/User.js';
+import Property from '../models/Property.js';
+import Booking from '../models/Booking.js';
+import Review from '../models/Review.js';
+import UserRating from '../models/UserRating.js';
+import { deleteUserCascade } from '../utils/cascadeDelete.js';
+
 // @desc Update user profile (self or admin)
 // @route PUT /api/users/:id
 // @access Private (Self or Admin)
@@ -35,17 +43,10 @@ export const updateUserProfile = async (req, res) => {
     res.status(500).json({ message: 'Server error while updating profile' });
   }
 };
-import User from '../models/User.js';
-import Property from '../models/Property.js';
-import Booking from '../models/Booking.js';
-import Review from '../models/Review.js';
-import Notification from '../models/Notification.js';
-import UserRating from '../models/UserRating.js';
-import mongoose from 'mongoose';
 
-// @desc Get all users (Admin only)
+// @desc Get all active users (directory listing)
 // @route GET /api/users
-// @access Private (Admin)
+// @access Public
 export const getUsers = async (req, res) => {
   try {
     const { role, page = 1, limit = 20, search } = req.query;
@@ -61,7 +62,7 @@ export const getUsers = async (req, res) => {
     }
 
     const users = await User.find(query)
-      .select('-password')
+      .select('-password -favourites')
       .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
@@ -226,27 +227,11 @@ export const deleteUser = async (req, res) => {
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     const session = await mongoose.startSession();
-    await session.withTransaction(async () => {
-      // Delete ratings authored by or targeting this user
-      await UserRating.deleteMany({ $or: [{ ratee: user._id }, { rater: user._id }] }).session(session);
-
-      if (user.role === 'owner') {
-        const properties = await Property.find({ owner: user._id }).session(session).select('_id');
-        const propIds = properties.map(p => p._id);
-        if (propIds.length) {
-          await Booking.deleteMany({ property: { $in: propIds } }).session(session);
-          await Review.deleteMany({ property: { $in: propIds } }).session(session);
-          await Notification.deleteMany({ $or: [ { property: { $in: propIds } }, { recipient: user._id } ] }).session(session);
-          await Property.deleteMany({ _id: { $in: propIds } }).session(session);
-        }
-      } else {
-        // Clean notifications addressed to this user
-        await Notification.deleteMany({ recipient: user._id }).session(session);
-      }
-
-      await User.deleteOne({ _id: user._id }).session(session);
-    });
-    session.endSession();
+    try {
+      await session.withTransaction(() => deleteUserCascade(user, session));
+    } finally {
+      session.endSession();
+    }
 
     res.json({ message: 'User and related data deleted successfully', data: { id: targetId } });
   } catch (error) {
@@ -260,7 +245,7 @@ export const deleteUser = async (req, res) => {
 // @access Public
 export const getUser = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select('-password');
+    const user = await User.findById(req.params.id).select('-password -favourites');
 
     if (!user || !user.isActive) {
       return res.status(404).json({ message: 'User not found' });

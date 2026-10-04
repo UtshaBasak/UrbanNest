@@ -1,29 +1,8 @@
-// Suggested properties for logged-in user
-export const getSuggestedProperties = async () => {
-  const response = await fetch(`${API_BASE_URL}/properties/suggested`, {
-    credentials: 'include',
-  });
-  return handleResponse(response);
-};
-const API_BASE_URL = '/api';
-
-// Helper function to handle API responses
-const handleResponse = async (response) => {
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: `${response.status} ${response.statusText}` }));
-    throw new Error(error.message || `${response.status} ${response.statusText}`);
-  }
-  return response.json();
-};
+import { API_BASE_URL, handleResponse, toSearchParams } from './http';
 
 // Top-rated properties
 export const getTopRatedProperties = async (params = {}) => {
-  const searchParams = new URLSearchParams();
-  Object.keys(params).forEach(key => {
-    if (params[key] !== undefined && params[key] !== '') {
-      searchParams.append(key, params[key]);
-    }
-  });
+  const searchParams = toSearchParams(params);
   const response = await fetch(`${API_BASE_URL}/properties/top-rated?${searchParams}`);
   return handleResponse(response);
 };
@@ -40,7 +19,6 @@ export const login = async (email, password) => {
   });
   return handleResponse(response);
 };
-
 
 export const register = async (userData) => {
   const response = await fetch(`${API_BASE_URL}/auth/register`, {
@@ -82,14 +60,16 @@ export const updateProfile = async (userId, profileData) => {
 };
 
 // Property API functions
-export const getProperties = async (params = {}) => {
-  const searchParams = new URLSearchParams();
-  Object.keys(params).forEach(key => {
-    if (params[key] !== undefined && params[key] !== '') {
-      searchParams.append(key, params[key]);
-    }
+// Suggested properties for logged-in user
+export const getSuggestedProperties = async () => {
+  const response = await fetch(`${API_BASE_URL}/properties/suggested`, {
+    credentials: 'include',
   });
-  
+  return handleResponse(response);
+};
+
+export const getProperties = async (params = {}) => {
+  const searchParams = toSearchParams(params);
   const response = await fetch(`${API_BASE_URL}/properties?${searchParams}`);
   return handleResponse(response);
 };
@@ -136,13 +116,7 @@ export const deleteProperty = async (id) => {
 };
 
 export const getPropertiesByOwner = async (ownerId, params = {}) => {
-  const searchParams = new URLSearchParams();
-  Object.keys(params).forEach(key => {
-    if (params[key] !== undefined && params[key] !== '') {
-      searchParams.append(key, params[key]);
-    }
-  });
-  
+  const searchParams = toSearchParams(params);
   const response = await fetch(`${API_BASE_URL}/properties/owner/${ownerId}?${searchParams}`);
   return handleResponse(response);
 };
@@ -161,13 +135,7 @@ export const createBooking = async (bookingData) => {
 };
 
 export const getMyBookings = async (params = {}) => {
-  const searchParams = new URLSearchParams();
-  Object.keys(params).forEach(key => {
-    if (params[key] !== undefined && params[key] !== '') {
-      searchParams.append(key, params[key]);
-    }
-  });
-  
+  const searchParams = toSearchParams(params);
   const response = await fetch(`${API_BASE_URL}/bookings/my?${searchParams}`, {
     credentials: 'include',
   });
@@ -208,25 +176,13 @@ export const createReview = async (reviewData) => {
 };
 
 export const getPropertyReviews = async (propertyId, params = {}) => {
-  const searchParams = new URLSearchParams();
-  Object.keys(params).forEach(key => {
-    if (params[key] !== undefined && params[key] !== '') {
-      searchParams.append(key, params[key]);
-    }
-  });
-  
+  const searchParams = toSearchParams(params);
   const response = await fetch(`${API_BASE_URL}/reviews/property/${propertyId}?${searchParams}`);
   return handleResponse(response);
 };
 
 export const getMyReviews = async (params = {}) => {
-  const searchParams = new URLSearchParams();
-  Object.keys(params).forEach(key => {
-    if (params[key] !== undefined && params[key] !== '') {
-      searchParams.append(key, params[key]);
-    }
-  });
-  
+  const searchParams = toSearchParams(params);
   const response = await fetch(`${API_BASE_URL}/reviews/my?${searchParams}`, {
     credentials: 'include',
   });
@@ -234,13 +190,7 @@ export const getMyReviews = async (params = {}) => {
 };
 
 export const getMyPropertiesReviews = async (params = {}) => {
-  const searchParams = new URLSearchParams();
-  Object.keys(params).forEach(key => {
-    if (params[key] !== undefined && params[key] !== '') {
-      searchParams.append(key, params[key]);
-    }
-  });
-  
+  const searchParams = toSearchParams(params);
   const response = await fetch(`${API_BASE_URL}/reviews/my-properties?${searchParams}`, {
     credentials: 'include',
   });
@@ -290,13 +240,7 @@ export const removeFavourite = async ({ itemType, itemId }) => {
 };
 
 export const getUsers = async (params = {}) => {
-  const searchParams = new URLSearchParams();
-  Object.keys(params).forEach(key => {
-    if (params[key] !== undefined && params[key] !== '') {
-      searchParams.append(key, params[key]);
-    }
-  });
-  
+  const searchParams = toSearchParams(params);
   const response = await fetch(`${API_BASE_URL}/users?${searchParams}`);
   return handleResponse(response);
 };
@@ -312,12 +256,7 @@ export const deleteCurrentUser = async () => {
 
 // Notification API functions
 export const getMyNotifications = async (params = {}) => {
-  const searchParams = new URLSearchParams();
-  Object.keys(params).forEach(key => {
-    if (params[key] !== undefined && params[key] !== '') {
-      searchParams.append(key, params[key]);
-    }
-  });
+  const searchParams = toSearchParams(params);
   const response = await fetch(`${API_BASE_URL}/notifications/my?${searchParams}`, {
     credentials: 'include',
   });
@@ -401,12 +340,7 @@ export const getUserRatingSummary = async (userId) => {
 };
 
 export const listUserRatings = async (userId, params = {}) => {
-  const searchParams = new URLSearchParams();
-  Object.keys(params).forEach(key => {
-    if (params[key] !== undefined && params[key] !== '') {
-      searchParams.append(key, params[key]);
-    }
-  });
+  const searchParams = toSearchParams(params);
   const response = await fetch(`${API_BASE_URL}/ratings/${userId}?${searchParams}`);
   return handleResponse(response);
 };
@@ -450,12 +384,7 @@ export const createLeaveRequest = async ({ bookingId, message }) => {
 };
 
 export const listMyLeaveRequests = async (params = {}) => {
-  const searchParams = new URLSearchParams();
-  Object.keys(params).forEach(key => {
-    if (params[key] !== undefined && params[key] !== '') {
-      searchParams.append(key, params[key]);
-    }
-  });
+  const searchParams = toSearchParams(params);
   const response = await fetch(`${API_BASE_URL}/leave-requests/my?${searchParams}`, {
     credentials: 'include',
   });
@@ -481,12 +410,7 @@ export const getAdminStats = async () => {
 };
 
 export const getOwners = async (params = {}) => {
-  const searchParams = new URLSearchParams();
-  Object.keys(params).forEach(key => {
-    if (params[key] !== undefined && params[key] !== '') {
-      searchParams.append(key, params[key]);
-    }
-  });
+  const searchParams = toSearchParams(params);
   const response = await fetch(`${API_BASE_URL}/admin/owners?${searchParams}`, {
     credentials: 'include',
   });
@@ -494,12 +418,7 @@ export const getOwners = async (params = {}) => {
 };
 
 export const getTenants = async (params = {}) => {
-  const searchParams = new URLSearchParams();
-  Object.keys(params).forEach(key => {
-    if (params[key] !== undefined && params[key] !== '') {
-      searchParams.append(key, params[key]);
-    }
-  });
+  const searchParams = toSearchParams(params);
   const response = await fetch(`${API_BASE_URL}/admin/tenants?${searchParams}`, {
     credentials: 'include',
   });
@@ -507,12 +426,7 @@ export const getTenants = async (params = {}) => {
 };
 
 export const getAdminProperties = async (params = {}) => {
-  const searchParams = new URLSearchParams();
-  Object.keys(params).forEach(key => {
-    if (params[key] !== undefined && params[key] !== '') {
-      searchParams.append(key, params[key]);
-    }
-  });
+  const searchParams = toSearchParams(params);
   const response = await fetch(`${API_BASE_URL}/admin/properties?${searchParams}`, {
     credentials: 'include',
   });
@@ -536,12 +450,7 @@ export const deletePropertyById = async (id) => {
 };
 
 export const getAdminReviews = async (params = {}) => {
-  const searchParams = new URLSearchParams();
-  Object.keys(params).forEach(key => {
-    if (params[key] !== undefined && params[key] !== '') {
-      searchParams.append(key, params[key]);
-    }
-  });
+  const searchParams = toSearchParams(params);
   const response = await fetch(`${API_BASE_URL}/admin/reviews?${searchParams}`, {
     credentials: 'include',
   });

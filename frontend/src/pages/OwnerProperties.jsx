@@ -48,7 +48,7 @@ const OwnerProperties = () => {
             {properties.map((property) => (
               <Link key={property._id} to={`/properties/${property._id}`} className="bg-white dark:bg-neutral-800 rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow">
                 <div className="relative">
-                  <img src={property.images?.[0] || '/api/placeholder/400/300'} alt={property.title} className="w-full h-48 object-cover" />
+                  <img src={property.images?.[0] || '/placeholder.svg'} alt={property.title} className="w-full h-48 object-cover" />
                   <span className={`absolute top-2 left-2 px-2 py-1 text-xs font-medium rounded-full shadow ${badge(property.availabilityStatus || property.availability)}`}>
                     {property.availabilityStatus || property.availability}
                   </span>

@@ -81,17 +81,13 @@ const Notifications = () => {
   };
 
   const toggleSelect = (id) => {
-    console.log('Toggling notification:', id);
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
-        console.log('Removing from selection:', id);
         next.delete(id);
       } else {
-        console.log('Adding to selection:', id);
         next.add(id);
       }
-      console.log('New selection:', Array.from(next));
       return next;
     });
     // Individual toggles should not mark select-all as explicitly checked
@@ -280,7 +276,6 @@ const Notifications = () => {
                           }`}
                           checked={selectedIds.has(n._id)}
                           onChange={(e) => {
-                            console.log('Checkbox changed:', e.target.checked, 'for notification:', n._id);
                             toggleSelect(n._id);
                             e.stopPropagation();
                           }}

@@ -1,35 +1,8 @@
-// Update user profile (self or admin)
-export const updateUserProfile = async (userId, profileData) => {
-  const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include',
-    body: JSON.stringify(profileData),
-  });
-  return handleResponse(response);
-};
-const API_BASE_URL = '/api';
-
-// Helper function to handle API responses
-const handleResponse = async (response) => {
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'An error occurred' }));
-    throw new Error(error.message || 'An error occurred');
-  }
-  return response.json();
-};
+import { API_BASE_URL, handleResponse, toSearchParams } from './http';
 
 // User API functions
 export const getUsers = async (params = {}) => {
-  const searchParams = new URLSearchParams();
-  Object.keys(params).forEach(key => {
-    if (params[key] !== undefined && params[key] !== '') {
-      searchParams.append(key, params[key]);
-    }
-  });
-  
+  const searchParams = toSearchParams(params);
   const response = await fetch(`${API_BASE_URL}/users?${searchParams}`, {
     credentials: 'include',
   });
@@ -58,6 +31,19 @@ export const updateUserStatus = async (id, isActive) => {
     },
     credentials: 'include',
     body: JSON.stringify({ isActive }),
+  });
+  return handleResponse(response);
+};
+
+// Update user profile (self or admin)
+export const updateUserProfile = async (userId, profileData) => {
+  const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(profileData),
   });
   return handleResponse(response);
 };

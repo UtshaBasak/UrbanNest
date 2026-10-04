@@ -2,6 +2,7 @@ import User from '../models/User.js';
 import Property from '../models/Property.js';
 import UserRating from '../models/UserRating.js';
 import mongoose from 'mongoose';
+import { deleteUserCascade } from '../utils/cascadeDelete.js';
 
 // @desc Get all owners with search functionality
 // @route GET /api/admin/owners
@@ -206,38 +207,7 @@ export const deleteUserById = async (req, res) => {
         throw new Error('Cannot delete admin accounts');
       }
 
-      // If it's an owner, we need to cascade delete their properties and related data
-      let propertyIds = [];
-      if (user.role === 'owner') {
-        const properties = await Property.find({ owner: userId }, '_id').session(session);
-        propertyIds = properties.map(p => p._id);
-        
-        // Delete owner's properties
-        await Property.deleteMany({ owner: userId }).session(session);
-      }
-
-      // Delete user's bookings (as tenant or bookings for their properties)
-      const bookingFilter = user.role === 'owner'
-        ? { $or: [{ tenant: userId }, { property: { $in: propertyIds } }] }
-        : { tenant: userId };
-      await mongoose.model('Booking').deleteMany(bookingFilter).session(session);
-
-      // Delete user's reviews (as tenant or reviews for their properties)
-      const reviewFilter = user.role === 'owner'
-        ? { $or: [{ tenant: userId }, { property: { $in: propertyIds } }] }
-        : { tenant: userId };
-      await mongoose.model('Review').deleteMany(reviewFilter).session(session);
-
-      // Delete user's notifications
-      await mongoose.model('Notification').deleteMany({ user: userId }).session(session);
-
-      // Delete user's ratings (given and received)
-      await UserRating.deleteMany({
-        $or: [{ rater: userId }, { ratee: userId }]
-      }).session(session);
-
-      // Finally, delete the user
-      await User.findByIdAndDelete(userId).session(session);
+      await deleteUserCascade(user, session);
     });
 
     res.json({ message: 'User and related data deleted successfully' });

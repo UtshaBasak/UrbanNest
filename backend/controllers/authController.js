@@ -2,11 +2,9 @@ import jwt from 'jsonwebtoken';
 import { validationResult } from 'express-validator';
 import mongoose from 'mongoose';
 import User from '../models/User.js';
-import Property from '../models/Property.js';
-import Booking from '../models/Booking.js';
-import Review from '../models/Review.js';
-import Notification from '../models/Notification.js';
-import UserRating from '../models/UserRating.js';
+import { deleteUserCascade } from '../utils/cascadeDelete.js';
+
+const TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 // Generate JWT token
 const generateToken = (userId) => {
@@ -15,68 +13,47 @@ const generateToken = (userId) => {
   });
 };
 
+// Shared cookie options. Set COOKIE_SAME_SITE=none when the frontend and API
+// are served from different domains (requires HTTPS).
+const cookieOptions = () => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.COOKIE_SAME_SITE || 'strict',
+  path: '/'
+});
+
+// Set secure HTTP-only cookie
+const setTokenCookie = (res, token) => {
+  res.cookie('token', token, { ...cookieOptions(), maxAge: TOKEN_MAX_AGE_MS });
+};
+
+const clearTokenCookie = (res) => {
+  res.clearCookie('token', cookieOptions());
+};
+
+// Public shape of a user returned by auth endpoints
+const toAuthUser = (user) => ({
+  id: user._id,
+  name: user.name,
+  email: user.email,
+  phone: user.phone,
+  role: user.role,
+  profileImage: user.profileImage
+});
+
 // @desc Delete current user (hard delete + cascade)
 // @route DELETE /api/auth/me
 // @access Private
 export const deleteCurrentUser = async (req, res) => {
-  const userId = req.user._id;
   const session = await mongoose.startSession();
   try {
     await session.withTransaction(async () => {
-      // Determine role for cascade behavior
-      const user = await User.findById(userId).session(session);
+      const user = await User.findById(req.user._id).session(session);
       if (!user) throw new Error('User not found');
-
-      // Collect related IDs for cascades
-      let propertyIds = [];
-      if (user.role === 'owner') {
-        const properties = await Property.find({ owner: userId }, '_id').session(session);
-        propertyIds = properties.map(p => p._id);
-      }
-
-      // Bookings: by tenant or by properties of this owner
-      const bookingFilter = user.role === 'owner'
-        ? { $or: [ { tenant: userId }, { property: { $in: propertyIds } } ] }
-        : { tenant: userId };
-      const bookings = await Booking.find(bookingFilter, '_id').session(session);
-      const bookingIds = bookings.map(b => b._id);
-
-      // Reviews by tenant or on owner's properties
-      const reviewFilter = user.role === 'owner'
-        ? { $or: [ { tenant: userId }, { property: { $in: propertyIds } } ] }
-        : { tenant: userId };
-
-      // Notifications for this user
-      const notifFilter = { user: userId };
-
-      // User ratings given or received by this user
-      const ratingFilter = { $or: [ { rater: userId }, { ratee: userId } ] };
-
-      // Execute deletions
-      await Promise.all([
-        // Properties (owner only)
-        propertyIds.length ? Property.deleteMany({ _id: { $in: propertyIds } }).session(session) : Promise.resolve(),
-        // Bookings
-        Booking.deleteMany(bookingFilter).session(session),
-        // Reviews
-        Review.deleteMany(reviewFilter).session(session),
-        // Notifications
-        Notification.deleteMany(notifFilter).session(session),
-        // User ratings
-        UserRating.deleteMany(ratingFilter).session(session),
-      ]);
-
-      // Finally, delete the user
-      await User.findByIdAndDelete(userId).session(session);
+      await deleteUserCascade(user, session);
     });
 
-    // Clear auth cookie
-    res.clearCookie('token', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      path: '/'
-    });
+    clearTokenCookie(res);
     return res.json({ message: 'Account and related data deleted successfully' });
   } catch (error) {
     console.error('Delete account error:', error);
@@ -84,19 +61,6 @@ export const deleteCurrentUser = async (req, res) => {
   } finally {
     session.endSession();
   }
-};
-
-// Set secure HTTP-only cookie
-const setTokenCookie = (res, token) => {
-  const cookieOptions = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    path: '/'
-  };
-  
-  res.cookie('token', token, cookieOptions);
 };
 
 // @desc Register user
@@ -107,7 +71,6 @@ export const register = async (req, res) => {
     // Check validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      console.log(errors);
       return res.status(400).json({ 
         message: 'Validation failed', 
         errors: errors.array() 
@@ -122,13 +85,13 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: 'User already exists with this email' });
     }
 
-    // Create user
+    // Create user (admin accounts can only be created via scripts/createAdmin.js)
     const user = new User({
       name,
       email,
       password,
       phone,
-      role: role || 'tenant',
+      role: role === 'owner' ? 'owner' : 'tenant',
       profileImage: profileImage || ''
     });
 
@@ -141,14 +104,7 @@ export const register = async (req, res) => {
     res.status(201).json({
       message: 'User registered successfully',
       data: {
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          phone: user.phone,
-          role: user.role,
-          profileImage: user.profileImage
-        }
+        user: toAuthUser(user)
       }
     });
 
@@ -180,16 +136,17 @@ export const login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Check if this is the admin email and update role if necessary
-    if (email === 'admin@gmail.com' && user.role !== 'admin') {
-      user.role = 'admin';
-      await user.save();
-    }
-
     // Check password
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // Ensure the configured admin account always carries the admin role
+    const adminEmail = (process.env.ADMIN_EMAIL || 'admin@gmail.com').toLowerCase();
+    if (user.email === adminEmail && user.role !== 'admin') {
+      user.role = 'admin';
+      await user.save();
     }
 
     // Generate token and set cookie
@@ -199,14 +156,7 @@ export const login = async (req, res) => {
     res.json({
       message: 'Login successful',
       data: {
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          phone: user.phone,
-          role: user.role,
-          profileImage: user.profileImage
-        }
+        user: toAuthUser(user)
       }
     });
 
@@ -220,12 +170,7 @@ export const login = async (req, res) => {
 // @route POST /api/auth/logout
 // @access Private
 export const logout = (req, res) => {
-  res.clearCookie('token', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    path: '/'
-  });
+  clearTokenCookie(res);
   
   res.json({ message: 'Logout successful' });
 };
@@ -236,14 +181,7 @@ export const logout = (req, res) => {
 export const getCurrentUser = (req, res) => {
   res.json({
     data: {
-      user: {
-        id: req.user._id,
-        name: req.user.name,
-        email: req.user.email,
-        phone: req.user.phone,
-        role: req.user.role,
-        profileImage: req.user.profileImage
-      }
+      user: toAuthUser(req.user)
     }
   });
 };

@@ -537,7 +537,7 @@ const UserProfile = () => {
                         className="cursor-pointer border border-neutral-200 dark:border-neutral-700 rounded-lg overflow-hidden hover:shadow-md transition-shadow"
                       >
                         <img
-                          src={property.images?.[0] || '/api/placeholder/300/200'}
+                          src={property.images?.[0] || '/placeholder.svg'}
                           alt={property.title}
                           className="w-full h-40 object-cover"
                         />

@@ -1,9 +1,6 @@
+import '../config/env.js';
 import mongoose from 'mongoose';
 import Property from '../models/Property.js';
-import { config } from 'dotenv';
-
-// Load environment variables
-config();
 
 // Function to generate unique 8-character alphanumeric ID
 const generateUniquePropertyId = async () => {

@@ -11,7 +11,6 @@ import {
   getTopRatedProperties,
   getSuggestedProperties
 } from '../controllers/propertyController.js';
-// ...existing code...
 import { authenticateToken, authorize, checkOwnership } from '../middleware/auth.js';
 import Property from '../models/Property.js';
 

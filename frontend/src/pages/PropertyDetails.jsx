@@ -397,7 +397,7 @@ const PropertyDetails = () => {
         <div className="mb-8">
           <div className="relative h-96 rounded-lg overflow-hidden">
             <img
-              src={property.images?.[0] || '/api/placeholder/800/400'}
+              src={property.images?.[0] || '/placeholder.svg'}
               alt={property.title}
               className="w-full h-full object-cover"
             />
@@ -681,7 +681,7 @@ const PropertyDetails = () => {
                   >
                     <div className="relative overflow-hidden rounded-t-xl">
                       <img
-                        src={property.images?.[0] || '/api/placeholder/400/300'}
+                        src={property.images?.[0] || '/placeholder.svg'}
                         alt={property.title}
                         className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
                       />
@@ -845,13 +845,13 @@ const PropertyDetails = () => {
             {/* Main image */}
             <div className="flex items-center justify-center px-4 pt-10 pb-3">
               <img
-                src={property.images?.[currentImageIndex] || '/api/placeholder/1200/800'}
+                src={property.images?.[currentImageIndex] || '/placeholder.svg'}
                 alt={property.title}
                 className="max-h-[65vh] w-auto max-w-full object-contain select-none"
                 loading="eager"
                 decoding="async"
                 referrerPolicy="no-referrer"
-                onError={(e) => { e.currentTarget.src = '/api/placeholder/1200/800'; }}
+                onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }}
               />
               {/* Prev/Next */}
               {property.images && property.images.length > 1 && (
@@ -889,7 +889,7 @@ const PropertyDetails = () => {
                         src={src}
                         alt={`${property.title} ${idx + 1}`}
                         className="h-20 w-28 object-cover rounded"
-                        onError={(e) => { e.currentTarget.src = '/api/placeholder/200/140'; }}
+                        onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }}
                       />
                     </button>
                   ))}
