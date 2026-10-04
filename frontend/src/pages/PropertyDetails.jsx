@@ -302,15 +302,15 @@ const PropertyDetails = () => {
       <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="animate-pulse">
-            <div className="h-8 bg-neutral-200 dark:bg-neutral-700 rounded w-1/4 mb-6"></div>
-            <div className="h-96 bg-neutral-200 dark:bg-neutral-700 rounded mb-6"></div>
+            <div className="h-8 bg-neutral-200 dark:bg-neutral-700 rounded-sm w-1/4 mb-6"></div>
+            <div className="h-96 bg-neutral-200 dark:bg-neutral-700 rounded-sm mb-6"></div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 space-y-4">
-                <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded"></div>
-                <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-3/4"></div>
-                <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-1/2"></div>
+                <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded-sm"></div>
+                <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded-sm w-3/4"></div>
+                <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded-sm w-1/2"></div>
               </div>
-              <div className="h-64 bg-neutral-200 dark:bg-neutral-700 rounded"></div>
+              <div className="h-64 bg-neutral-200 dark:bg-neutral-700 rounded-sm"></div>
             </div>
           </div>
         </div>
@@ -350,7 +350,7 @@ const PropertyDetails = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Properties
           </button>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center gap-4">
             <button
               onClick={handleToggleFavourite}
               aria-label={isFavourited ? 'Remove from favourites' : 'Add to favourites'}
@@ -405,7 +405,7 @@ const PropertyDetails = () => {
               <button
                 type="button"
                 onClick={() => { setCurrentImageIndex(0); setShowPhotoViewer(true); }}
-                className="absolute top-4 right-4 bg-black/60 text-white text-sm px-3 py-1 rounded hover:bg-black/70"
+                className="absolute top-4 right-4 bg-black/60 text-white text-sm px-3 py-1 rounded-sm hover:bg-black/70"
               >
                 View all photos
               </button>
@@ -428,14 +428,14 @@ const PropertyDetails = () => {
                   </div>
                   {property.propertyId && (
                     <div className="flex items-center text-neutral-600 dark:text-neutral-400 mb-2">
-                      <span className="text-sm font-mono bg-neutral-100 dark:bg-neutral-700 px-2 py-1 rounded">
+                      <span className="text-sm font-mono bg-neutral-100 dark:bg-neutral-700 px-2 py-1 rounded-sm">
                         ID: {property.propertyId}
                       </span>
                     </div>
                   )}
                   <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-600 dark:text-neutral-400 mb-2">
                     {property.currentTenant?.name && (
-                      <span className="px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-700">Tenant: {property.currentTenant.name}</span>
+                      <span className="px-2 py-1 rounded-sm bg-neutral-100 dark:bg-neutral-700">Tenant: {property.currentTenant.name}</span>
                     )}
                   </div>
                   {(() => {
@@ -731,17 +731,17 @@ const PropertyDetails = () => {
                       </div>
                       {property.propertyId && (
                         <div className="flex items-center text-neutral-600 dark:text-neutral-400 mb-2">
-                          <span className="text-xs font-mono bg-neutral-100 dark:bg-neutral-700 px-2 py-1 rounded">
+                          <span className="text-xs font-mono bg-neutral-100 dark:bg-neutral-700 px-2 py-1 rounded-sm">
                             ID: {property.propertyId}
                           </span>
                         </div>
                       )}
                       <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-600 dark:text-neutral-400 mb-3">
                         {property.owner?.name && (
-                          <span className="px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-700">Owned by {property.owner.name}</span>
+                          <span className="px-2 py-1 rounded-sm bg-neutral-100 dark:bg-neutral-700">Owned by {property.owner.name}</span>
                         )}
                         {property.currentTenant?.name && (
-                          <span className="px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-700">Tenant: {property.currentTenant.name}</span>
+                          <span className="px-2 py-1 rounded-sm bg-neutral-100 dark:bg-neutral-700">Tenant: {property.currentTenant.name}</span>
                         )}
                       </div>
                       <div className="flex items-center justify-between text-sm text-neutral-600 dark:text-neutral-400">
@@ -806,7 +806,7 @@ const PropertyDetails = () => {
                   className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent resize-none"
                 />
               </div>
-              <div className="flex space-x-3">
+              <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={() => setShowBookingModal(false)}
@@ -836,7 +836,7 @@ const PropertyDetails = () => {
             {/* Close */}
             <button
               onClick={() => setShowPhotoViewer(false)}
-              className="absolute top-3 right-3 bg-black/60 text-white px-3 py-1 rounded"
+              className="absolute top-3 right-3 bg-black/60 text-white px-3 py-1 rounded-sm"
               aria-label="Close"
             >
               Close
@@ -858,14 +858,14 @@ const PropertyDetails = () => {
                 <>
                   <button
                     onClick={() => setCurrentImageIndex((i) => Math.max(i - 1, 0))}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/60 text-white px-3 py-2 rounded"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/60 text-white px-3 py-2 rounded-sm"
                     aria-label="Previous"
                   >
                     ‹
                   </button>
                   <button
                     onClick={() => setCurrentImageIndex((i) => Math.min(i + 1, property.images.length - 1))}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/60 text-white px-3 py-2 rounded"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/60 text-white px-3 py-2 rounded-sm"
                     aria-label="Next"
                   >
                     ›
@@ -882,13 +882,13 @@ const PropertyDetails = () => {
                     <button
                       key={idx}
                       onClick={() => setCurrentImageIndex(idx)}
-                      className={`border-2 ${idx === currentImageIndex ? 'border-white' : 'border-transparent'} rounded`}
+                      className={`border-2 ${idx === currentImageIndex ? 'border-white' : 'border-transparent'} rounded-sm`}
                       aria-label={`View photo ${idx + 1}`}
                     >
                       <img
                         src={src}
                         alt={`${property.title} ${idx + 1}`}
-                        className="h-20 w-28 object-cover rounded"
+                        className="h-20 w-28 object-cover rounded-sm"
                         onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }}
                       />
                     </button>

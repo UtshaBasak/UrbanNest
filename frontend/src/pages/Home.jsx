@@ -121,7 +121,7 @@ const Home = () => {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-primary-50 via-white to-secondary-50 dark:from-neutral-900 dark:via-neutral-800 dark:to-neutral-900 py-20 px-4 overflow-hidden">
+      <section className="relative bg-linear-to-br from-primary-50 via-white to-secondary-50 dark:from-neutral-900 dark:via-neutral-800 dark:to-neutral-900 py-20 px-4 overflow-hidden">
         {/* Background decoration */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary-200/30 dark:bg-primary-800/20 rounded-full blur-3xl"></div>
@@ -201,8 +201,8 @@ const Home = () => {
                 <div key={i} className="card animate-pulse">
                   <div className="h-48 bg-neutral-200 dark:bg-neutral-700 rounded-t-xl"></div>
                   <div className="p-6">
-                    <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded mb-2"></div>
-                    <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-3/4"></div>
+                    <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded-sm mb-2"></div>
+                    <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded-sm w-3/4"></div>
                   </div>
                 </div>
               ))}
@@ -269,17 +269,17 @@ const Home = () => {
                     </div>
                     {property.propertyId && (
                       <div className="flex items-center text-neutral-600 dark:text-neutral-400 mb-2">
-                        <span className="text-xs font-mono bg-neutral-100 dark:bg-neutral-700 px-2 py-1 rounded">
+                        <span className="text-xs font-mono bg-neutral-100 dark:bg-neutral-700 px-2 py-1 rounded-sm">
                           ID: {property.propertyId}
                         </span>
                       </div>
                     )}
                     <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-600 dark:text-neutral-400 mb-3">
                       {property.owner?.name && (
-                        <span className="px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-700">Owned by {property.owner.name}</span>
+                        <span className="px-2 py-1 rounded-sm bg-neutral-100 dark:bg-neutral-700">Owned by {property.owner.name}</span>
                       )}
                       {property.currentTenant?.name && (
-                        <span className="px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-700">Tenant: {property.currentTenant.name}</span>
+                        <span className="px-2 py-1 rounded-sm bg-neutral-100 dark:bg-neutral-700">Tenant: {property.currentTenant.name}</span>
                       )}
                     </div>
                     
@@ -319,8 +319,8 @@ const Home = () => {
                 <div key={i} className="card animate-pulse">
                   <div className="h-48 bg-neutral-200 dark:bg-neutral-700 rounded-t-xl"></div>
                   <div className="p-6">
-                    <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded mb-2"></div>
-                    <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-3/4"></div>
+                    <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded-sm mb-2"></div>
+                    <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded-sm w-3/4"></div>
                   </div>
                 </div>
               ))}
@@ -385,17 +385,17 @@ const Home = () => {
                     </div>
                     {property.propertyId && (
                       <div className="flex items-center text-neutral-600 dark:text-neutral-400 mb-2">
-                        <span className="text-xs font-mono bg-neutral-100 dark:bg-neutral-700 px-2 py-1 rounded">
+                        <span className="text-xs font-mono bg-neutral-100 dark:bg-neutral-700 px-2 py-1 rounded-sm">
                           ID: {property.propertyId}
                         </span>
                       </div>
                     )}
                     <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-600 dark:text-neutral-400 mb-3">
                       {property.owner?.name && (
-                        <span className="px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-700">Owned by {property.owner.name}</span>
+                        <span className="px-2 py-1 rounded-sm bg-neutral-100 dark:bg-neutral-700">Owned by {property.owner.name}</span>
                       )}
                       {property.currentTenant?.name && (
-                        <span className="px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-700">Tenant: {property.currentTenant.name}</span>
+                        <span className="px-2 py-1 rounded-sm bg-neutral-100 dark:bg-neutral-700">Tenant: {property.currentTenant.name}</span>
                       )}
                     </div>
                     <div className="flex items-center justify-between text-sm text-neutral-600 dark:text-neutral-400">
@@ -432,8 +432,8 @@ const Home = () => {
                 <div key={i} className="card animate-pulse">
                   <div className="h-48 bg-neutral-200 dark:bg-neutral-700 rounded-t-xl"></div>
                   <div className="p-6">
-                    <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded mb-2"></div>
-                    <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-3/4"></div>
+                    <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded-sm mb-2"></div>
+                    <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded-sm w-3/4"></div>
                   </div>
                 </div>
               ))}
@@ -500,17 +500,17 @@ const Home = () => {
                     </div>
                     {property.propertyId && (
                       <div className="flex items-center text-neutral-600 dark:text-neutral-400 mb-2">
-                        <span className="text-xs font-mono bg-neutral-100 dark:bg-neutral-700 px-2 py-1 rounded">
+                        <span className="text-xs font-mono bg-neutral-100 dark:bg-neutral-700 px-2 py-1 rounded-sm">
                           ID: {property.propertyId}
                         </span>
                       </div>
                     )}
                     <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-600 dark:text-neutral-400 mb-3">
                       {property.owner?.name && (
-                        <span className="px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-700">Owned by {property.owner.name}</span>
+                        <span className="px-2 py-1 rounded-sm bg-neutral-100 dark:bg-neutral-700">Owned by {property.owner.name}</span>
                       )}
                       {property.currentTenant?.name && (
-                        <span className="px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-700">Tenant: {property.currentTenant.name}</span>
+                        <span className="px-2 py-1 rounded-sm bg-neutral-100 dark:bg-neutral-700">Tenant: {property.currentTenant.name}</span>
                       )}
                     </div>
                     <div className="flex items-center justify-between text-sm text-neutral-600 dark:text-neutral-400">
@@ -550,13 +550,13 @@ const Home = () => {
               <h2 className="text-2xl font-bold mb-2">Help</h2>
               <p className="mb-2 text-lg text-gray-200">Contact Us</p>
               <div className="flex items-center gap-2 mb-2">
-                <span className="inline-block w-5 h-5 bg-purple-200 rounded-sm items-center justify-center">
+                <span className="inline-block w-5 h-5 bg-purple-200 rounded-xs items-center justify-center">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-purple-700"><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L2.32 8.91A2.25 2.25 0 011.25 6.993V6.75" /></svg>
                 </span>
                 <span className="text-lg">info@urbannest.com</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="inline-block w-5 h-5 bg-pink-200 rounded-sm items-center justify-center">
+                <span className="inline-block w-5 h-5 bg-pink-200 rounded-xs items-center justify-center">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-pink-700"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0-1.243 1.007-2.25 2.25-2.25h15a2.25 2.25 0 012.25 2.25v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75zm0 0l9.72 6.48a2.25 2.25 0 002.36 0L22.5 6.75" /></svg>
                 </span>
                 <span className="text-lg">+88 01234567890</span>

@@ -98,7 +98,7 @@ const PropertyReviews = () => {
         ) : (
           <ul className="space-y-4">
             {reviews.map((r) => (
-              <li key={r._id} className="bg-white dark:bg-neutral-800 rounded-lg shadow p-4">
+              <li key={r._id} className="bg-white dark:bg-neutral-800 rounded-lg shadow-sm p-4">
                 <div className="flex items-start gap-4">
                   {r.tenant?.profileImage ? (
                     <img

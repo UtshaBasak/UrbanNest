@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "React client for UrbanNest - property rental platform",
   "private": true,
+  "engines": {
+    "node": ">=20.19"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -16,8 +19,8 @@
     "react-router-dom": "^7.18.4"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
     "@vitejs/plugin-react": "^6.1.1",
-    "autoprefixer": "^10.6.1",
     "postcss": "^8.5.28",
     "tailwindcss": "^4.3.3",
     "vite": "^8.3.2"

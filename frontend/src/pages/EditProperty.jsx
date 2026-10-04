@@ -87,40 +87,40 @@ const EditProperty = () => {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-2xl font-semibold text-neutral-900 dark:text-white mb-6">Edit Property</h1>
         {error && (
-          <div className="mb-4 bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-200 px-4 py-3 rounded">
+          <div className="mb-4 bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-200 px-4 py-3 rounded-sm">
             {error}
           </div>
         )}
-        <form onSubmit={handleSubmit} className="space-y-4 bg-white dark:bg-neutral-800 p-6 rounded-lg shadow">
+        <form onSubmit={handleSubmit} className="space-y-4 bg-white dark:bg-neutral-800 p-6 rounded-lg shadow-sm">
           <div>
             <label className="block text-sm text-neutral-800 dark:text-neutral-200 mb-1">Title</label>
-            <input name="title" value={form.title} onChange={handleChange} className="w-full p-2 rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-cyan-600" />
+            <input name="title" value={form.title} onChange={handleChange} className="w-full p-2 rounded-sm border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:ring-2 focus:ring-cyan-600" />
           </div>
           <div>
             <label className="block text-sm text-neutral-800 dark:text-neutral-200 mb-1">Description</label>
-            <textarea name="description" value={form.description} onChange={handleChange} rows={4} className="w-full p-2 rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-cyan-600" />
+            <textarea name="description" value={form.description} onChange={handleChange} rows={4} className="w-full p-2 rounded-sm border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:ring-2 focus:ring-cyan-600" />
           </div>
           <div>
             <label className="block text-sm text-neutral-800 dark:text-neutral-200 mb-1">Location</label>
-            <input name="location" value={form.location} onChange={handleChange} className="w-full p-2 rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-cyan-600" />
+            <input name="location" value={form.location} onChange={handleChange} className="w-full p-2 rounded-sm border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:ring-2 focus:ring-cyan-600" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-neutral-800 dark:text-neutral-200 mb-1">Latitude</label>
-              <input name="latitude" value={form.latitude} onChange={handleChange} placeholder="e.g., 23.8103" className="w-full p-2 rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-cyan-600" />
+              <input name="latitude" value={form.latitude} onChange={handleChange} placeholder="e.g., 23.8103" className="w-full p-2 rounded-sm border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:ring-2 focus:ring-cyan-600" />
             </div>
             <div>
               <label className="block text-sm text-neutral-800 dark:text-neutral-200 mb-1">Longitude</label>
-              <input name="longitude" value={form.longitude} onChange={handleChange} placeholder="e.g., 90.4125" className="w-full p-2 rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-cyan-600" />
+              <input name="longitude" value={form.longitude} onChange={handleChange} placeholder="e.g., 90.4125" className="w-full p-2 rounded-sm border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:ring-2 focus:ring-cyan-600" />
             </div>
           </div>
           <div>
             <label className="block text-sm text-neutral-800 dark:text-neutral-200 mb-1">Price (monthly)</label>
-            <input type="number" name="price" value={form.price} onChange={handleChange} className="w-full p-2 rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-cyan-600" />
+            <input type="number" name="price" value={form.price} onChange={handleChange} className="w-full p-2 rounded-sm border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:ring-2 focus:ring-cyan-600" />
           </div>
           <div>
             <label className="block text-sm text-neutral-800 dark:text-neutral-200 mb-1">Type</label>
-            <select name="type" value={form.type} onChange={handleChange} className="w-full p-2 rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-cyan-600">
+            <select name="type" value={form.type} onChange={handleChange} className="w-full p-2 rounded-sm border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:ring-2 focus:ring-cyan-600">
               <option>Apartment</option>
               <option>House</option>
               <option>Shop</option>
@@ -130,7 +130,7 @@ const EditProperty = () => {
           </div>
           <div>
             <label className="block text-sm text-neutral-800 dark:text-neutral-200 mb-1">Status</label>
-            <select name="availabilityStatus" value={form.availabilityStatus} onChange={handleChange} className="w-full p-2 rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-cyan-600">
+            <select name="availabilityStatus" value={form.availabilityStatus} onChange={handleChange} className="w-full p-2 rounded-sm border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:ring-2 focus:ring-cyan-600">
               <option>Available</option>
               <option>Booked</option>
               <option>Under Construction</option>

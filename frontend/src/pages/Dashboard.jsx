@@ -199,12 +199,12 @@ const Dashboard = () => {
       <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="animate-pulse">
-            <div className="h-8 bg-neutral-200 dark:bg-neutral-700 rounded w-1/4 mb-6"></div>
+            <div className="h-8 bg-neutral-200 dark:bg-neutral-700 rounded-sm w-1/4 mb-6"></div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
               {[...Array(4)].map((_, i) => (
                 <div key={i} className="bg-white dark:bg-neutral-800 rounded-lg shadow-md p-6">
-                  <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded mb-2"></div>
-                  <div className="h-8 bg-neutral-200 dark:bg-neutral-700 rounded"></div>
+                  <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded-sm mb-2"></div>
+                  <div className="h-8 bg-neutral-200 dark:bg-neutral-700 rounded-sm"></div>
                 </div>
               ))}
             </div>
@@ -343,7 +343,7 @@ const Dashboard = () => {
         {/* Tabs */}
         <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-md">
           <div className="border-b border-neutral-200 dark:border-neutral-700">
-            <nav className="flex space-x-8 px-6">
+            <nav className="flex gap-8 px-6">
               {user?.role === 'owner' && (
                 <button
                   onClick={() => setActiveTab('properties')}
@@ -401,7 +401,7 @@ const Dashboard = () => {
                   data.properties.map((property) => (
                     <div key={property._id} className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
+                        <div className="flex items-center gap-4">
                           <img
                             src={property.images?.[0] || '/placeholder.svg'}
                             alt={property.title}
@@ -424,7 +424,7 @@ const Dashboard = () => {
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center gap-2">
                           <Link
                             to={`/properties/${property._id}`}
                             className="p-2 text-neutral-600 dark:text-neutral-400 hover:text-cyan-600 dark:hover:text-cyan-400"
@@ -512,7 +512,7 @@ const Dashboard = () => {
                               </div>
                             )}
                           </div>
-                          <div className="flex items-center space-x-2">
+                          <div className="flex items-center gap-2">
                             {user?.role === 'tenant' && booking.status === 'approved' && (
                               <>
                                 <Link
@@ -534,7 +534,7 @@ const Dashboard = () => {
                               </>
                             )}
                             {user?.role === 'owner' && booking.status === 'pending' && (
-                              <div className="flex space-x-1">
+                              <div className="flex gap-1">
                                 <button
                                   onClick={() => handleBookingStatusUpdate(booking._id, 'approved')}
                                   className="p-1 text-green-600 hover:text-green-700"

@@ -38,7 +38,7 @@ const OwnerProperties = () => {
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-2xl font-semibold text-neutral-900 dark:text-white mb-6">Owner Properties</h1>
-        {error && <div className="mb-4 bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-200 px-4 py-3 rounded">{error}</div>}
+        {error && <div className="mb-4 bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-200 px-4 py-3 rounded-sm">{error}</div>}
         {loading ? (
           <div>Loading...</div>
         ) : properties.length === 0 ? (
@@ -46,10 +46,10 @@ const OwnerProperties = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {properties.map((property) => (
-              <Link key={property._id} to={`/properties/${property._id}`} className="bg-white dark:bg-neutral-800 rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow">
+              <Link key={property._id} to={`/properties/${property._id}`} className="bg-white dark:bg-neutral-800 rounded-lg shadow-sm overflow-hidden hover:shadow-lg transition-shadow">
                 <div className="relative">
                   <img src={property.images?.[0] || '/placeholder.svg'} alt={property.title} className="w-full h-48 object-cover" />
-                  <span className={`absolute top-2 left-2 px-2 py-1 text-xs font-medium rounded-full shadow ${badge(property.availabilityStatus || property.availability)}`}>
+                  <span className={`absolute top-2 left-2 px-2 py-1 text-xs font-medium rounded-full shadow-sm ${badge(property.availabilityStatus || property.availability)}`}>
                     {property.availabilityStatus || property.availability}
                   </span>
                 </div>
@@ -61,17 +61,17 @@ const OwnerProperties = () => {
                   </div>
                   {property.propertyId && (
                     <div className="flex items-center text-neutral-600 dark:text-neutral-400 mb-2">
-                      <span className="text-xs font-mono bg-neutral-100 dark:bg-neutral-700 px-2 py-1 rounded">
+                      <span className="text-xs font-mono bg-neutral-100 dark:bg-neutral-700 px-2 py-1 rounded-sm">
                         ID: {property.propertyId}
                       </span>
                     </div>
                   )}
                   <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-600 dark:text-neutral-400 mb-3">
                     {property.owner?.name && (
-                      <span className="px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-700">Owned by {property.owner.name}</span>
+                      <span className="px-2 py-1 rounded-sm bg-neutral-100 dark:bg-neutral-700">Owned by {property.owner.name}</span>
                     )}
                     {property.currentTenant?.name && (
-                      <span className="px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-700">Tenant: {property.currentTenant.name}</span>
+                      <span className="px-2 py-1 rounded-sm bg-neutral-100 dark:bg-neutral-700">Tenant: {property.currentTenant.name}</span>
                     )}
                   </div>
                   <div className="flex items-center text-sm text-neutral-600 dark:text-neutral-400 mb-2 gap-4">

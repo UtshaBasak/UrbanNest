@@ -121,7 +121,7 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 bg-gradient-to-br from-primary-50 via-white to-secondary-50 dark:from-neutral-900 dark:via-neutral-800 dark:to-neutral-900">
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 bg-linear-to-br from-primary-50 via-white to-secondary-50 dark:from-neutral-900 dark:via-neutral-800 dark:to-neutral-900">
       <div className="w-full max-w-md">
         <div className="card p-8 animate-slide-up">
           <div className="text-center mb-8">
@@ -129,8 +129,8 @@ const Register = () => {
           </div>
 
           {errors.submit && (
-            <div className="mb-6 p-4 bg-error-50 dark:bg-error-900/20 border border-error-200 dark:border-error-800 rounded-lg flex items-center space-x-3 animate-slide-up">
-              <AlertCircle className="w-5 h-5 text-error-600 dark:text-error-400 flex-shrink-0" />
+            <div className="mb-6 p-4 bg-error-50 dark:bg-error-900/20 border border-error-200 dark:border-error-800 rounded-lg flex items-center gap-3 animate-slide-up">
+              <AlertCircle className="w-5 h-5 text-error-600 dark:text-error-400 shrink-0" />
               <span className="text-error-700 dark:text-error-300 text-sm">{errors.submit}</span>
             </div>
           )}
@@ -152,7 +152,7 @@ const Register = () => {
                   spellCheck={false}
                   autoCapitalize="none"
                   autoCorrect="off"
-                  className={`w-full h-11 rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 ${errors.name ? 'focus:ring-error-500 border-error-500' : 'focus:ring-cyan-600'} pl-12 pr-12`}
+                  className={`w-full h-11 rounded-sm border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-400 focus:outline-hidden focus:ring-2 ${errors.name ? 'focus:ring-error-500 border-error-500' : 'focus:ring-cyan-600'} pl-12 pr-12`}
                   placeholder="Enter your full name"
                 />
               </div>
@@ -176,7 +176,7 @@ const Register = () => {
                   autoCapitalize="none"
                   autoCorrect="off"
                   inputMode="email"
-                  className={`w-full h-11 rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 ${errors.email ? 'focus:ring-error-500 border-error-500' : 'focus:ring-cyan-600'} pl-12 pr-12`}
+                  className={`w-full h-11 rounded-sm border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-400 focus:outline-hidden focus:ring-2 ${errors.email ? 'focus:ring-error-500 border-error-500' : 'focus:ring-cyan-600'} pl-12 pr-12`}
                   placeholder="Enter your email address"
                 />
               </div>
@@ -219,7 +219,7 @@ const Register = () => {
                   autoCapitalize="none"
                   autoCorrect="off"
                   inputMode="tel"
-                  className={`w-full h-11 rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 ${errors.phone ? 'focus:ring-error-500 border-error-500' : 'focus:ring-cyan-600'} pl-12 pr-12`}
+                  className={`w-full h-11 rounded-sm border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-400 focus:outline-hidden focus:ring-2 ${errors.phone ? 'focus:ring-error-500 border-error-500' : 'focus:ring-cyan-600'} pl-12 pr-12`}
                   placeholder="Enter your phone number"
                 />
               </div>
@@ -235,7 +235,7 @@ const Register = () => {
                 name="role"
                 value={formData.role}
                 onChange={handleChange}
-                className="w-full h-11 rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-cyan-600 px-3"
+                className="w-full h-11 rounded-sm border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:ring-2 focus:ring-cyan-600 px-3"
               >
                 <option value="tenant">Tenant</option>
                 <option value="owner">Owner</option>
@@ -258,7 +258,7 @@ const Register = () => {
                   spellCheck={false}
                   autoCapitalize="none"
                   autoCorrect="off"
-                  className={`w-full h-11 rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 ${errors.password ? 'focus:ring-error-500 border-error-500' : 'focus:ring-cyan-600'} pl-12 pr-12`}
+                  className={`w-full h-11 rounded-sm border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-400 focus:outline-hidden focus:ring-2 ${errors.password ? 'focus:ring-error-500 border-error-500' : 'focus:ring-cyan-600'} pl-12 pr-12`}
                   placeholder="Enter your password"
                 />
                 <button
@@ -288,7 +288,7 @@ const Register = () => {
                   spellCheck={false}
                   autoCapitalize="none"
                   autoCorrect="off"
-                  className={`w-full h-11 rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 ${errors.confirmPassword ? 'focus:ring-error-500 border-error-500' : 'focus:ring-cyan-600'} pl-12 pr-12`}
+                  className={`w-full h-11 rounded-sm border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-400 focus:outline-hidden focus:ring-2 ${errors.confirmPassword ? 'focus:ring-error-500 border-error-500' : 'focus:ring-cyan-600'} pl-12 pr-12`}
                   placeholder="Confirm your password"
                 />
                 <button
@@ -301,7 +301,7 @@ const Register = () => {
               </div>
               {errors.confirmPassword && <p className="form-error">{errors.confirmPassword}</p>}
               {formData.confirmPassword && formData.password === formData.confirmPassword && (
-                <div className="flex items-center space-x-2 mt-2">
+                <div className="flex items-center gap-2 mt-2">
                   <CheckCircle className="w-4 h-4 text-success-600" />
                   <span className="text-success-600 text-sm">Passwords match</span>
                 </div>

@@ -14,7 +14,7 @@ const propertyFields = [
   { label: 'Type', key: 'type' },
   { label: 'Status', key: 'availabilityStatus' },
   { label: 'Owner', key: 'owner', render: (o) => o?.name || '' },
-  { label: 'Images', key: 'images', render: (imgs) => imgs && imgs.length ? <img src={imgs[0]} alt="img" className="h-20 w-32 object-cover rounded" /> : '' },
+  { label: 'Images', key: 'images', render: (imgs) => imgs && imgs.length ? <img src={imgs[0]} alt="img" className="h-20 w-32 object-cover rounded-sm" /> : '' },
 ];
 
 export default function Compare() {
@@ -58,8 +58,8 @@ export default function Compare() {
             <thead>
               <tr>
                 <th className="p-4 border-b border-r border-neutral-300 dark:border-neutral-700 text-left text-neutral-900 dark:text-white">Field</th>
-                <th className="p-4 border-b border-r border-neutral-300 dark:border-neutral-700 text-center text-neutral-900 dark:text-white">Property 1 {properties[0] && <button onClick={() => removeFromCompare(0)} className="ml-2 px-2 py-1 text-xs bg-red-500 text-white rounded">Remove</button>}</th>
-                <th className="p-4 border-b border-neutral-300 dark:border-neutral-700 text-center text-neutral-900 dark:text-white">Property 2 {properties[1] && <button onClick={() => removeFromCompare(1)} className="ml-2 px-2 py-1 text-xs bg-red-500 text-white rounded">Remove</button>}</th>
+                <th className="p-4 border-b border-r border-neutral-300 dark:border-neutral-700 text-center text-neutral-900 dark:text-white">Property 1 {properties[0] && <button onClick={() => removeFromCompare(0)} className="ml-2 px-2 py-1 text-xs bg-red-500 text-white rounded-sm">Remove</button>}</th>
+                <th className="p-4 border-b border-neutral-300 dark:border-neutral-700 text-center text-neutral-900 dark:text-white">Property 2 {properties[1] && <button onClick={() => removeFromCompare(1)} className="ml-2 px-2 py-1 text-xs bg-red-500 text-white rounded-sm">Remove</button>}</th>
               </tr>
             </thead>
             <tbody>

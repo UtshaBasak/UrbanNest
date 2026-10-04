@@ -103,13 +103,13 @@ const Properties = () => {
       <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="animate-pulse">
-            <div className="h-8 bg-neutral-200 dark:bg-neutral-700 rounded w-1/4 mb-6"></div>
+            <div className="h-8 bg-neutral-200 dark:bg-neutral-700 rounded-sm w-1/4 mb-6"></div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[...Array(6)].map((_, i) => (
                 <div key={i} className="bg-white dark:bg-neutral-800 rounded-lg shadow-md p-4">
-                  <div className="h-48 bg-neutral-200 dark:bg-neutral-700 rounded mb-4"></div>
-                  <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded mb-2"></div>
-                  <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-3/4"></div>
+                  <div className="h-48 bg-neutral-200 dark:bg-neutral-700 rounded-sm mb-4"></div>
+                  <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded-sm mb-2"></div>
+                  <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded-sm w-3/4"></div>
                 </div>
               ))}
             </div>
@@ -127,7 +127,7 @@ const Properties = () => {
           <h1 className="text-3xl font-bold text-neutral-900 dark:text-white mb-4 sm:mb-0">
             Properties
           </h1>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center gap-4">
             {user?.role === 'owner' && (
               <button
                 onClick={() => navigate('/properties/new')}
@@ -138,7 +138,7 @@ const Properties = () => {
             )}
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center px-4 py-2 rounded-lg border transition-colors bg-white text-neutral-800 hover:bg-neutral-50 border-neutral-300 dark:bg-neutral-700 dark:text-white dark:hover:bg-neutral-600 dark:border-neutral-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              className="flex items-center px-4 py-2 rounded-lg border transition-colors bg-white text-neutral-800 hover:bg-neutral-50 border-neutral-300 dark:bg-neutral-700 dark:text-white dark:hover:bg-neutral-600 dark:border-neutral-500 focus:outline-hidden focus:ring-2 focus:ring-cyan-500"
             >
               <Filter className="h-4 w-4 mr-2 text-current" />
               Filters
@@ -272,7 +272,7 @@ const Properties = () => {
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-200 px-4 py-3 rounded mb-6">
+          <div className="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-200 px-4 py-3 rounded-sm mb-6">
             {error}
           </div>
         )}
@@ -301,7 +301,7 @@ const Properties = () => {
                     className={`object-cover ${viewMode === 'list' ? 'h-full' : 'h-48'} w-full`}
                   />
                   <span
-                    className={`absolute top-2 left-2 px-2 py-1 text-xs font-medium rounded-full shadow ${getAvailabilityColor(property.availabilityStatus || property.availability)}`}
+                    className={`absolute top-2 left-2 px-2 py-1 text-xs font-medium rounded-full shadow-sm ${getAvailabilityColor(property.availabilityStatus || property.availability)}`}
                   >
                     {property.availabilityStatus || property.availability}
                   </span>
@@ -335,17 +335,17 @@ const Properties = () => {
                   </div>
                   {property.propertyId && (
                     <div className="flex items-center text-neutral-600 dark:text-neutral-400 mb-2">
-                      <span className="text-xs font-mono bg-neutral-100 dark:bg-neutral-700 px-2 py-1 rounded">
+                      <span className="text-xs font-mono bg-neutral-100 dark:bg-neutral-700 px-2 py-1 rounded-sm">
                         ID: {property.propertyId}
                       </span>
                     </div>
                   )}
                   <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-600 dark:text-neutral-400 mb-3">
                     {property.owner?.name && (
-                      <span className="px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-700">Owned by {property.owner.name}</span>
+                      <span className="px-2 py-1 rounded-sm bg-neutral-100 dark:bg-neutral-700">Owned by {property.owner.name}</span>
                     )}
                     {property.currentTenant?.name && (
-                      <span className="px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-700">Tenant: {property.currentTenant.name}</span>
+                      <span className="px-2 py-1 rounded-sm bg-neutral-100 dark:bg-neutral-700">Tenant: {property.currentTenant.name}</span>
                     )}
                   </div>
                   <p className="text-neutral-600 dark:text-neutral-400 text-sm mb-4 line-clamp-2">

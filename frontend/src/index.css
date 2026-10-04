@@ -1,6 +1,147 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
+
+  --color-secondary-50: #f0fdfa;
+  --color-secondary-100: #ccfbf1;
+  --color-secondary-200: #99f6e4;
+  --color-secondary-300: #5eead4;
+  --color-secondary-400: #2dd4bf;
+  --color-secondary-500: #14b8a6;
+  --color-secondary-600: #0d9488;
+  --color-secondary-700: #0f766e;
+  --color-secondary-800: #115e59;
+  --color-secondary-900: #134e4a;
+
+  --color-accent-50: #fff7ed;
+  --color-accent-100: #ffedd5;
+  --color-accent-200: #fed7aa;
+  --color-accent-300: #fdba74;
+  --color-accent-400: #fb923c;
+  --color-accent-500: #f97316;
+  --color-accent-600: #ea580c;
+  --color-accent-700: #c2410c;
+  --color-accent-800: #9a3412;
+  --color-accent-900: #7c2d12;
+
+  --color-success-50: #f0fdf4;
+  --color-success-100: #dcfce7;
+  --color-success-200: #bbf7d0;
+  --color-success-300: #86efac;
+  --color-success-400: #4ade80;
+  --color-success-500: #22c55e;
+  --color-success-600: #16a34a;
+  --color-success-700: #15803d;
+  --color-success-800: #166534;
+  --color-success-900: #14532d;
+
+  --color-warning-50: #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-200: #fde68a;
+  --color-warning-300: #fcd34d;
+  --color-warning-400: #fbbf24;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+  --color-warning-800: #92400e;
+  --color-warning-900: #78350f;
+
+  --color-error-50: #fef2f2;
+  --color-error-100: #fee2e2;
+  --color-error-200: #fecaca;
+  --color-error-300: #fca5a5;
+  --color-error-400: #f87171;
+  --color-error-500: #ef4444;
+  --color-error-600: #dc2626;
+  --color-error-700: #b91c1c;
+  --color-error-800: #991b1b;
+  --color-error-900: #7f1d1d;
+
+  --color-neutral-50: #fafafa;
+  --color-neutral-100: #f5f5f5;
+  --color-neutral-200: #e5e5e5;
+  --color-neutral-300: #d4d4d4;
+  --color-neutral-400: #a3a3a3;
+  --color-neutral-500: #737373;
+  --color-neutral-600: #525252;
+  --color-neutral-700: #404040;
+  --color-neutral-800: #262626;
+  --color-neutral-900: #171717;
+
+  --backdrop-blur-xs: 2px;
+
+  --animate-fade-in: fadeIn 0.5s ease-in-out;
+  --animate-slide-up: slideUp 0.3s ease-out;
+  --animate-bounce-soft: bounceSoft 0.6s ease-out;
+
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+  @keyframes slideUp {
+    0% {
+      transform: translateY(10px);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  @keyframes bounceSoft {
+    0%,
+    20%,
+    53%,
+    80%,
+    100% {
+      transform: translateY(0);
+    }
+    40%,
+    43% {
+      transform: translateY(-8px);
+    }
+    70% {
+      transform: translateY(-4px);
+    }
+    90% {
+      transform: translateY(-2px);
+    }
+  }
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
 
 /* Hide all scrollbars (WebKit, Firefox, IE/Edge) */
 * {
@@ -97,7 +238,7 @@
 
 /* Buttons */
 .btn {
-  @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+  @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-hidden focus:ring-2 focus:ring-offset-2;
 }
 
 .btn-primary {
@@ -118,7 +259,7 @@
 
 /* Cards */
 .card {
-  @apply bg-white rounded-xl shadow-sm border border-neutral-200 transition-all duration-200;
+  @apply bg-white rounded-xl shadow-xs border border-neutral-200 transition-all duration-200;
 }
 
 .dark .card {
@@ -146,7 +287,7 @@
 /* Dynamic island navbar */
 .dynamic-island {
   @apply fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-full;
-  @apply glass shadow-lg shadow-cyan-500/20;
+  @apply backdrop-blur-xl bg-white/70 border border-white/20 dark:bg-neutral-900/70 dark:border-neutral-700/50 shadow-lg shadow-cyan-500/20;
   -webkit-backdrop-filter: blur(20px); /* Safari 9+, iOS 9+ */
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -159,7 +300,7 @@
 
 /* Gradient text */
 .gradient-text {
-  @apply bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent;
+  @apply bg-linear-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent;
 }
 
 .dark .gradient-text {
@@ -191,7 +332,7 @@
 
 /* Rating stars */
 .star-rating {
-  @apply inline-flex items-center space-x-1;
+  @apply inline-flex items-center gap-1;
 }
 
 .star {
@@ -224,7 +365,7 @@
 
 /* Focus visible for accessibility */
 .focus-visible:focus-visible {
-  @apply outline-none ring-2 ring-primary-500 ring-offset-2;
+  @apply outline-hidden ring-2 ring-primary-500 ring-offset-2;
 }
 
 .dark .focus-visible:focus-visible {

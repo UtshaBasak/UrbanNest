@@ -107,8 +107,8 @@ const ProfileStatus = () => {
     return (
       <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="h-6 w-40 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse mb-4" />
-          <div className="h-48 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+          <div className="h-6 w-40 bg-neutral-200 dark:bg-neutral-700 rounded-sm animate-pulse mb-4" />
+          <div className="h-48 bg-neutral-200 dark:bg-neutral-700 rounded-sm animate-pulse" />
         </div>
       </div>
     );
@@ -211,7 +211,7 @@ const ProfileStatus = () => {
                             </div>
                             <button
                               onClick={() => navigate(`/property/${p._id}`)}
-                              className="ml-4 p-2 rounded hover:bg-neutral-100 dark:hover:bg-neutral-700"
+                              className="ml-4 p-2 rounded-sm hover:bg-neutral-100 dark:hover:bg-neutral-700"
                             >
                               <ChevronRight className="h-5 w-5" />
                             </button>

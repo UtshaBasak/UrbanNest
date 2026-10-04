@@ -39,7 +39,7 @@ const SearchBar = ({ placeholder, value, onChange, onSearch }) => (
     <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
     <button
       onClick={onSearch}
-      className="absolute right-2 top-1.5 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+      className="absolute right-2 top-1.5 px-3 py-1 bg-blue-500 text-white rounded-sm hover:bg-blue-600 transition-colors"
     >
       Search
     </button>
@@ -257,7 +257,7 @@ const AdminDashboard = () => {
 
         {/* Navigation Tabs */}
         <div className="mb-8">
-          <nav className="flex space-x-8">
+          <nav className="flex gap-8">
             {[
               { id: 'overview', label: 'Overview', icon: BarChart3 },
               { id: 'owners', label: 'Owner Information', icon: UserCheck },
@@ -323,7 +323,7 @@ const AdminDashboard = () => {
                       <tr key={owner._id}>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10">
+                            <div className="shrink-0 h-10 w-10">
                               <img
                                 className="h-10 w-10 rounded-full object-cover"
                                 src={owner.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(owner.name)}&background=3B82F6&color=fff`}
@@ -406,7 +406,7 @@ const AdminDashboard = () => {
                       <tr key={tenant._id}>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10">
+                            <div className="shrink-0 h-10 w-10">
                               <img
                                 className="h-10 w-10 rounded-full object-cover"
                                 src={tenant.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(tenant.name)}&background=8B5CF6&color=fff`}
@@ -492,9 +492,9 @@ const AdminDashboard = () => {
                       <tr key={property._id}>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10">
+                            <div className="shrink-0 h-10 w-10">
                               <img
-                                className="h-10 w-10 rounded object-cover"
+                                className="h-10 w-10 rounded-sm object-cover"
                                 src={property.images?.[0] || '/placeholder-property.jpg'}
                                 alt={property.title}
                               />

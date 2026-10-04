@@ -144,7 +144,7 @@ const Navbar = () => {
             : 'opacity-0 -translate-y-6 scale-95 pointer-events-none'
         }`}
       >
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center gap-4">
           {/* Logo */}
           <Link 
             to="/" 
@@ -154,7 +154,7 @@ const Navbar = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden md:flex items-center gap-4">
             {/* Search Bar */}
             <div className="relative" ref={searchRef}>
               <div className="relative">
@@ -171,7 +171,7 @@ const Navbar = () => {
                       setShowSearchDropdown(false);
                     }
                   }}
-                  className="w-48 lg:w-64 xl:w-72 pl-4 pr-10 py-2 bg-white/80 dark:bg-neutral-800/80 border border-white/30 dark:border-neutral-700/50 rounded-full text-sm placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-transparent backdrop-blur-sm transition-all duration-200 text-neutral-900 dark:text-white"
+                  className="w-48 lg:w-64 xl:w-72 pl-4 pr-10 py-2 bg-white/80 dark:bg-neutral-800/80 border border-white/30 dark:border-neutral-700/50 rounded-full text-sm placeholder-neutral-500 focus:outline-hidden focus:ring-2 focus:ring-primary-500/50 focus:border-transparent backdrop-blur-sm transition-all duration-200 text-neutral-900 dark:text-white"
                 />
                 <button
                   type="button"
@@ -182,7 +182,7 @@ const Navbar = () => {
                       setShowSearchDropdown(false);
                     }
                   }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-neutral-500 hover:text-cyan-600 dark:text-neutral-300 dark:hover:text-cyan-400 focus:outline-none"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-neutral-500 hover:text-cyan-600 dark:text-neutral-300 dark:hover:text-cyan-400 focus:outline-hidden"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <circle cx="11" cy="11" r="7" />
@@ -251,7 +251,7 @@ const Navbar = () => {
 
             {/* User Menu */}
             {user ? (
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center gap-3">
                 <Link
                   to="/dashboard"
                   className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-full text-sm font-medium transition-all duration-200 hover:scale-105 hover:ring-2 hover:ring-cyan-400/60"
@@ -286,7 +286,7 @@ const Navbar = () => {
                   {showProfileMenu && (
                     <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-neutral-900 border border-white/30 dark:border-neutral-700 rounded-xl shadow-lg overflow-hidden z-50">
                       <div className="px-4 py-3 border-b border-white/30 dark:border-neutral-700 flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full overflow-hidden bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center flex-shrink-0">
+                        <div className="h-10 w-10 rounded-full overflow-hidden bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center shrink-0">
                           {user?.profileImage ? (
                             <img src={user.profileImage} alt="avatar" className="h-full w-full object-cover" />
                           ) : (
@@ -330,7 +330,7 @@ const Navbar = () => {
                 </div>
               </div>
             ) : (
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center gap-3">
                 <Link
                   to="/login"
                   className="px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 rounded-full transition-all duration-200"
@@ -362,23 +362,23 @@ const Navbar = () => {
         <>
           <button
             onClick={() => setShowFloatingMenu((v) => !v)}
-            className={`fixed top-4 right-4 z-[60] h-10 w-10 rounded-full bg-cyan-600 text-white shadow-xl hover:bg-cyan-700 transition-all duration-300 ease-out ring-2 ring-cyan-400/30 drop-shadow-[0_8px_16px_rgba(34,211,238,0.35)] ${
+            className={`fixed top-4 right-4 z-60 h-10 w-10 rounded-full bg-cyan-600 text-white shadow-xl hover:bg-cyan-700 transition-all duration-300 ease-out ring-2 ring-cyan-400/30 drop-shadow-[0_8px_16px_rgba(34,211,238,0.35)] ${
               showFloatingMenu ? 'scale-110 drop-shadow-[0_10px_20px_rgba(34,211,238,0.45)]' : 'scale-100'
             } ${fabIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
             title="Open Menu"
             aria-label="Open Menu"
           >
             {/* Simple hamburger */}
-            <span className="block w-5 h-0.5 bg-white mx-auto mb-1.5 rounded"></span>
-            <span className="block w-5 h-0.5 bg-white mx-auto mb-1.5 rounded"></span>
-            <span className="block w-5 h-0.5 bg-white mx-auto rounded"></span>
+            <span className="block w-5 h-0.5 bg-white mx-auto mb-1.5 rounded-sm"></span>
+            <span className="block w-5 h-0.5 bg-white mx-auto mb-1.5 rounded-sm"></span>
+            <span className="block w-5 h-0.5 bg-white mx-auto rounded-sm"></span>
           </button>
 
           {/* Removed fixed profile menu in transformed state per request */}
 
           {/* Vertical menu panel opened by floating button */}
           {showFloatingMenu && (
-            <div className="fixed top-20 right-4 z-[55] w-64 max-h-[70vh] overflow-auto rounded-2xl border shadow-xl p-4 animate-slide-up bg-white/98 dark:bg-neutral-900/98 border-white/30 dark:border-neutral-700/70 backdrop-blur-xl">
+            <div className="fixed top-20 right-4 z-55 w-64 max-h-[70vh] overflow-auto rounded-2xl border shadow-xl p-4 animate-slide-up bg-white/98 dark:bg-neutral-900/98 border-white/30 dark:border-neutral-700/70 backdrop-blur-xl">
               <div className="space-y-2">
                 <Link to="/" onClick={() => setShowFloatingMenu(false)} className="block px-3 py-2 rounded-lg hover:bg-cyan-100 dark:hover:bg-cyan-900/50 text-sm font-medium text-neutral-900 dark:text-neutral-100">Home</Link>
                 <Link to="/properties" onClick={() => setShowFloatingMenu(false)} className="block px-3 py-2 rounded-lg hover:bg-cyan-100 dark:hover:bg-cyan-900/50 text-sm font-medium text-neutral-900 dark:text-neutral-100">Properties</Link>
@@ -424,7 +424,7 @@ const Navbar = () => {
               <input
                 type="text"
                 placeholder="Search..."
-                className="w-full pl-4 pr-4 py-3 bg-neutral-100 dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full pl-4 pr-4 py-3 bg-neutral-100 dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 focus:outline-hidden focus:ring-2 focus:ring-primary-500"
               />
             </div>
           </div>

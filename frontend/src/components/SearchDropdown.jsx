@@ -62,7 +62,7 @@ const SearchDropdown = ({ query, onClose }) => {
           {/* Properties */}
           {results.properties.length > 0 && (
             <div className="p-2">
-              <div className="flex items-center space-x-2 px-3 py-2 text-xs font-medium text-neutral-500 uppercase tracking-wide">
+              <div className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-neutral-500 uppercase tracking-wide">
                 <Building2 className="w-4 h-4" />
                 <span>Properties</span>
               </div>
@@ -71,7 +71,7 @@ const SearchDropdown = ({ query, onClose }) => {
                   key={property._id}
                   to={`/properties/${property._id}`}
                   onClick={onClose}
-                  className="flex items-center space-x-3 px-3 py-3 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl transition-all duration-200"
+                  className="flex items-center gap-3 px-3 py-3 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl transition-all duration-200"
                 >
                   <img
                     src={property.images[0]}
@@ -97,7 +97,7 @@ const SearchDropdown = ({ query, onClose }) => {
           {/* Owners */}
           {results.owners.length > 0 && (
             <div className="p-2 border-t border-neutral-200 dark:border-neutral-700">
-              <div className="flex items-center space-x-2 px-3 py-2 text-xs font-medium text-neutral-500 uppercase tracking-wide">
+              <div className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-neutral-500 uppercase tracking-wide">
                 <User className="w-4 h-4" />
                 <span>Property Owners</span>
               </div>
@@ -106,9 +106,9 @@ const SearchDropdown = ({ query, onClose }) => {
                   key={owner._id}
                   to={`/users/${owner._id}`}
                   onClick={onClose}
-                  className="flex items-center space-x-3 px-3 py-3 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl transition-all duration-200"
+                  className="flex items-center gap-3 px-3 py-3 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl transition-all duration-200"
                 >
-                  <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-full flex items-center justify-center text-white font-semibold">
+                  <div className="w-10 h-10 bg-linear-to-br from-primary-500 to-secondary-500 rounded-full flex items-center justify-center text-white font-semibold">
                     {owner.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1">
@@ -130,7 +130,7 @@ const SearchDropdown = ({ query, onClose }) => {
           {/* Tenants */}
           {results.tenants.length > 0 && (
             <div className="p-2 border-t border-neutral-200 dark:border-neutral-700">
-              <div className="flex items-center space-x-2 px-3 py-2 text-xs font-medium text-neutral-500 uppercase tracking-wide">
+              <div className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-neutral-500 uppercase tracking-wide">
                 <Users className="w-4 h-4" />
                 <span>Tenants</span>
               </div>
@@ -139,9 +139,9 @@ const SearchDropdown = ({ query, onClose }) => {
                   key={tenant._id}
                   to={`/users/${tenant._id}`}
                   onClick={onClose}
-                  className="flex items-center space-x-3 px-3 py-3 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl transition-all duration-200"
+                  className="flex items-center gap-3 px-3 py-3 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl transition-all duration-200"
                 >
-                  <div className="w-10 h-10 bg-gradient-to-br from-secondary-500 to-accent-500 rounded-full flex items-center justify-center text-white font-semibold">
+                  <div className="w-10 h-10 bg-linear-to-br from-secondary-500 to-accent-500 rounded-full flex items-center justify-center text-white font-semibold">
                     {tenant.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1">

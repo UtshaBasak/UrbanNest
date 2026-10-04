@@ -97,8 +97,8 @@ const PropertyReviewNew = () => {
     return (
       <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 py-8">
         <div className="max-w-3xl mx-auto px-4">
-          <div className="h-6 w-40 bg-neutral-200 dark:bg-neutral-700 rounded mb-4 animate-pulse" />
-          <div className="h-64 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+          <div className="h-6 w-40 bg-neutral-200 dark:bg-neutral-700 rounded-sm mb-4 animate-pulse" />
+          <div className="h-64 bg-neutral-200 dark:bg-neutral-700 rounded-sm animate-pulse" />
         </div>
       </div>
     );

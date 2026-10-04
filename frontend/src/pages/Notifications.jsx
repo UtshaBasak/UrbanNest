@@ -242,7 +242,7 @@ const Notifications = () => {
         </div>
 
         {error && (
-          <div className="mb-4 bg-red-100 dark:bg-red-900 border border-red-200 dark:border-red-700 text-red-800 dark:text-red-100 px-4 py-3 rounded">
+          <div className="mb-4 bg-red-100 dark:bg-red-900 border border-red-200 dark:border-red-700 text-red-800 dark:text-red-100 px-4 py-3 rounded-sm">
             {error}
           </div>
         )}

@@ -44,7 +44,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 bg-gradient-to-br from-primary-50 via-white to-secondary-50 dark:from-neutral-900 dark:via-neutral-800 dark:to-neutral-900">
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 bg-linear-to-br from-primary-50 via-white to-secondary-50 dark:from-neutral-900 dark:via-neutral-800 dark:to-neutral-900">
       <div className="w-full max-w-md">
         <div className="card p-8 animate-slide-up">
           <div className="text-center mb-8">
@@ -55,8 +55,8 @@ const Login = () => {
           </div>
 
           {error && (
-            <div className="mb-6 p-4 bg-error-50 dark:bg-error-900/20 border border-error-200 dark:border-error-800 rounded-lg flex items-center space-x-3 animate-slide-up">
-              <AlertCircle className="w-5 h-5 text-error-600 dark:text-error-400 flex-shrink-0" />
+            <div className="mb-6 p-4 bg-error-50 dark:bg-error-900/20 border border-error-200 dark:border-error-800 rounded-lg flex items-center gap-3 animate-slide-up">
+              <AlertCircle className="w-5 h-5 text-error-600 dark:text-error-400 shrink-0" />
               <span className="text-error-700 dark:text-error-300 text-sm">{error}</span>
             </div>
           )}
@@ -80,7 +80,7 @@ const Login = () => {
                   autoCapitalize="none"
                   autoCorrect="off"
                   inputMode="email"
-                  className="w-full rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 px-4 py-3 pl-11 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 px-4 py-3 pl-11 focus:outline-hidden focus:ring-2 focus:ring-primary-500"
                   placeholder="Enter your email address"
                 />
               </div>
@@ -103,7 +103,7 @@ const Login = () => {
                   spellCheck={false}
                   autoCapitalize="none"
                   autoCorrect="off"
-                  className="w-full rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 px-4 py-3 pl-11 pr-11 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 px-4 py-3 pl-11 pr-11 focus:outline-hidden focus:ring-2 focus:ring-primary-500"
                   placeholder="Enter your password"
                 />
                 <button
@@ -119,7 +119,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full btn btn-primary py-3 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full btn btn-primary py-3 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>

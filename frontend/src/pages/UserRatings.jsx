@@ -62,7 +62,7 @@ const UserRatings = () => {
         ) : (
           <ul className="space-y-4">
             {ratings.map((r) => (
-              <li key={r._id} className="bg-white dark:bg-neutral-800 rounded-lg shadow p-4">
+              <li key={r._id} className="bg-white dark:bg-neutral-800 rounded-lg shadow-sm p-4">
                 <div className="flex items-start gap-4">
                   {r.rater?.profileImage ? (
                     <img
@@ -86,7 +86,7 @@ const UserRatings = () => {
                     <div className="mt-1 text-neutral-800 dark:text-neutral-200">
                       <span className="font-semibold">Rating:</span> {r.rating}
                       {r.context && (
-                        <span className="ml-2 text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-700 px-2 py-0.5 rounded">
+                        <span className="ml-2 text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-700 px-2 py-0.5 rounded-sm">
                           {r.context}
                         </span>
                       )}

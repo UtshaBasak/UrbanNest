@@ -246,14 +246,14 @@ const UserProfile = () => {
       <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="animate-pulse">
-            <div className="h-8 bg-neutral-200 dark:bg-neutral-700 rounded w-1/4 mb-6"></div>
+            <div className="h-8 bg-neutral-200 dark:bg-neutral-700 rounded-sm w-1/4 mb-6"></div>
             <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-md p-6 mb-6">
-              <div className="flex items-center space-x-6">
+              <div className="flex items-center gap-6">
                 <div className="w-24 h-24 bg-neutral-200 dark:bg-neutral-700 rounded-full"></div>
                 <div className="flex-1 space-y-2">
-                  <div className="h-6 bg-neutral-200 dark:bg-neutral-700 rounded w-1/3"></div>
-                  <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-1/2"></div>
-                  <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-1/4"></div>
+                  <div className="h-6 bg-neutral-200 dark:bg-neutral-700 rounded-sm w-1/3"></div>
+                  <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded-sm w-1/2"></div>
+                  <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded-sm w-1/4"></div>
                 </div>
               </div>
             </div>
@@ -316,8 +316,8 @@ const UserProfile = () => {
           <div className="md:col-span-1 bg-white dark:bg-neutral-800 rounded-lg shadow-md p-6 min-w-0 z-10">
             {isEditing ? (
               <form onSubmit={handleUpdateProfile}>
-                <div className="flex items-start space-x-6">
-                  <div className="flex-shrink-0">
+                <div className="flex items-start gap-6">
+                  <div className="shrink-0">
                     <div className="w-24 h-24 bg-cyan-100 dark:bg-cyan-900 rounded-full flex items-center justify-center">
                       {editForm.profileImage ? (
                         <img
@@ -366,7 +366,7 @@ const UserProfile = () => {
                       />
                       <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">Upload a JPG or PNG image. The new photo will replace your current one.</p>
                     </div>
-                    <div className="flex space-x-3">
+                    <div className="flex gap-3">
                       <button
                         type="submit"
                         disabled={updateLoading}
@@ -381,8 +381,8 @@ const UserProfile = () => {
               </form>
             ) : (
               <div>
-                <div className="flex items-center space-x-6 mb-4">
-                  <div className="flex-shrink-0">
+                <div className="flex items-center gap-6 mb-4">
+                  <div className="shrink-0">
                     <div className="w-24 h-24 bg-cyan-100 dark:bg-cyan-900 rounded-full flex items-center justify-center">
                       {user.profileImage ? (
                         <img
@@ -476,7 +476,7 @@ const UserProfile = () => {
                         <select
                           value={rateValue}
                           onChange={(e) => setRateValue(e.target.value)}
-                          className="border border-neutral-300 dark:border-neutral-600 rounded px-2 py-1 bg-transparent"
+                          className="border border-neutral-300 dark:border-neutral-600 rounded-sm px-2 py-1 bg-transparent"
                         >
                           {[5, 4, 3, 2, 1].map((v) => (
                             <option key={v} value={v}>
@@ -489,7 +489,7 @@ const UserProfile = () => {
                         value={rateComment}
                         onChange={(e) => setRateComment(e.target.value)}
                         placeholder="Optional comment"
-                        className="w-full border border-neutral-300 dark:border-neutral-600 rounded p-2 bg-transparent text-sm"
+                        className="w-full border border-neutral-300 dark:border-neutral-600 rounded-sm p-2 bg-transparent text-sm"
                         rows={3}
                       />
                       <button

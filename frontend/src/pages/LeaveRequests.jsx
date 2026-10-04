@@ -72,14 +72,14 @@ const LeaveRequests = () => {
         {error && <p className="text-red-600 dark:text-red-400">{error}</p>}
 
         {!loading && items.length === 0 && (
-          <div className="bg-white dark:bg-neutral-800 rounded-lg shadow p-6 text-center text-neutral-600 dark:text-neutral-300">
+          <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-sm p-6 text-center text-neutral-600 dark:text-neutral-300">
             No leave requests yet.
           </div>
         )}
 
         <div className="space-y-4">
           {items.map((lr) => (
-            <div key={lr._id} className="bg-white dark:bg-neutral-800 rounded-lg shadow p-4">
+            <div key={lr._id} className="bg-white dark:bg-neutral-800 rounded-lg shadow-sm p-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">

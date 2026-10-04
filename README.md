@@ -10,10 +10,10 @@ Browse and compare homes, request bookings, leave reviews, rate owners and tenan
 
 [![CI](https://github.com/UtshaBasak/UrbanNest/actions/workflows/ci.yml/badge.svg)](https://github.com/UtshaBasak/UrbanNest/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/UtshaBasak/UrbanNest/actions/workflows/codeql.yml/badge.svg)](https://github.com/UtshaBasak/UrbanNest/actions/workflows/codeql.yml)
-![Node](https://img.shields.io/badge/node-%3E%3D18-339933?logo=node.js&logoColor=white)
-![React](https://img.shields.io/badge/react-18-61DAFB?logo=react&logoColor=black)
-![MongoDB](https://img.shields.io/badge/mongodb-mongoose%208-47A248?logo=mongodb&logoColor=white)
-![Tailwind CSS](https://img.shields.io/badge/tailwind-3-06B6D4?logo=tailwindcss&logoColor=white)
+![Node](https://img.shields.io/badge/node-%3E%3D22-339933?logo=node.js&logoColor=white)
+![React](https://img.shields.io/badge/react-19-61DAFB?logo=react&logoColor=black)
+![MongoDB](https://img.shields.io/badge/mongodb-mongoose%209-47A248?logo=mongodb&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/tailwind-4-06B6D4?logo=tailwindcss&logoColor=white)
 
 </div>
 
@@ -63,8 +63,8 @@ Browse and compare homes, request bookings, leave reviews, rate owners and tenan
 
 | Layer      | Technology |
 |------------|------------|
-| Frontend   | React 18, React Router 7, Vite 7, Tailwind CSS 3, Lucide icons |
-| Backend    | Node.js, Express 4, Mongoose 8 |
+| Frontend   | React 19, React Router 7, Vite 8, Tailwind CSS 4, Lucide icons |
+| Backend    | Node.js, Express 5, Mongoose 9 |
 | Database   | MongoDB (replica set / Atlas, which transactions require) |
 | Auth       | JSON Web Tokens in HTTP-only cookies, bcrypt password hashing |
 | Security   | Helmet, CORS allow-list, express-rate-limit, express-validator |
@@ -103,7 +103,7 @@ UrbanNest/
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) 18 or newer
+- [Node.js](https://nodejs.org/) 22 or newer
 - A MongoDB database. A free [MongoDB Atlas](https://www.mongodb.com/atlas) cluster is the easiest option. Account deletion uses multi-document transactions, which need a replica set; Atlas provides one by default.
 
 ### 1. Clone the repository

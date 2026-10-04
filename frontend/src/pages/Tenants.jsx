@@ -80,7 +80,7 @@ const Tenants = () => {
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-2xl font-semibold text-neutral-900 dark:text-white mb-6">Tenants</h1>
-        {error && <div className="mb-4 bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-200 px-4 py-3 rounded">{error}</div>}
+        {error && <div className="mb-4 bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-200 px-4 py-3 rounded-sm">{error}</div>}
         {loading ? (
           <div>Loading...</div>
         ) : tenants.length === 0 ? (
@@ -88,7 +88,7 @@ const Tenants = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {tenants.map((t) => (
-              <div key={t._id} className="bg-white dark:bg-neutral-800 rounded-lg shadow p-6">
+              <div key={t._id} className="bg-white dark:bg-neutral-800 rounded-lg shadow-sm p-6">
                 <div className="flex items-center gap-4">
                   {t.profileImage ? (
                     <img src={t.profileImage} alt={t.name || 'Tenant'} className="w-12 h-12 rounded-full object-cover border border-neutral-200 dark:border-neutral-700" />
@@ -143,13 +143,13 @@ const Tenants = () => {
               max={5}
               value={ratingValue}
               onChange={(e) => setRatingValue(e.target.value)}
-              className="w-full mb-4 rounded-md border border-neutral-300 dark:border-neutral-600 bg-transparent px-3 py-2 text-neutral-900 dark:text-white focus:outline-none"
+              className="w-full mb-4 rounded-md border border-neutral-300 dark:border-neutral-600 bg-transparent px-3 py-2 text-neutral-900 dark:text-white focus:outline-hidden"
             />
             <label className="block text-sm text-neutral-700 dark:text-neutral-300 mb-2">Comment (optional)</label>
             <textarea
               value={ratingComment}
               onChange={(e) => setRatingComment(e.target.value)}
-              className="w-full mb-4 rounded-md border border-neutral-300 dark:border-neutral-600 bg-transparent px-3 py-2 text-neutral-900 dark:text-white focus:outline-none"
+              className="w-full mb-4 rounded-md border border-neutral-300 dark:border-neutral-600 bg-transparent px-3 py-2 text-neutral-900 dark:text-white focus:outline-hidden"
               rows={3}
             />
             <div className="flex justify-end gap-3">
